@@ -584,70 +584,12 @@
         Back
       </button>
     </div>
-    <div class="topbar-title">Schedule</div>
+    <div class="topbar-title" id="sched-title">Schedule</div>
     <button id="sched-add-btn" onclick="openSheet('sheet-new-sched')" style="display:none;background:none;border:none;color:var(--accent);font-family:var(--font);font-size:26px;font-weight:300;cursor:pointer;padding:0 4px;line-height:1;">+</button>
     <div id="sched-add-placeholder" style="width:32px;"></div>
   </div>
-
-  <!-- ── ADMIN VIEW ── -->
-  <div id="sched-admin-view" style="display:none;flex:1;min-height:0;flex-direction:column;overflow:hidden;">
-    <div class="scroll-body" style="flex:1;">
-      <div class="cal-header">
-        <div class="cal-month" id="cal-month-label">March 2026</div>
-        <div class="cal-nav">
-          <button class="cal-nav-btn" onclick="calShift(-1)">‹</button>
-          <button class="cal-nav-btn" onclick="calShift(1)">›</button>
-        </div>
-      </div>
-      <div class="cal-grid">
-        <div class="cal-dow">Su</div><div class="cal-dow">Mo</div><div class="cal-dow">Tu</div>
-        <div class="cal-dow">We</div><div class="cal-dow">Th</div><div class="cal-dow">Fr</div><div class="cal-dow">Sa</div>
-        <div id="cal-cells"></div>
-      </div>
-      <div class="cal-divider"></div>
-      <div class="cal-day-detail">
-        <div class="cal-day-title" id="cal-selected-label">Select a day to view reservations</div>
-        <div id="cal-day-events"></div>
-      </div>
-      <div class="upcoming-section">
-        <div class="section-header" style="padding:0 0 12px;">All Upcoming Reservations</div>
-        <div id="upcoming-list"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── STUDENT VIEW ── -->
-  <div id="sched-student-view" style="display:none;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;">
-    <div style="padding:20px;">
-      <div style="background:var(--accent-dim);border:1px solid var(--accent-glow);border-radius:var(--radius);padding:16px;margin-bottom:24px;">
-        <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px;">Equipment Request</div>
-        <div style="font-size:12px;color:var(--text2);line-height:1.5;">Fill out the form below to reserve equipment. An admin will review your request.</div>
-      </div>
-      <div class="form-row" style="margin-bottom:16px;">
-        <label class="field-label">Equipment Item</label>
-        <select class="field-select" id="sr-item" style="background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm);width:100%;padding:13px 16px;font-family:var(--font);font-size:14px;outline:none;-webkit-appearance:none;"></select>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-        <div>
-          <label class="field-label">Start Date</label>
-          <input class="field-input" type="date" id="sr-start" style="background:var(--bg2);color:var(--text);border:1px solid var(--border);color-scheme:dark;">
-        </div>
-        <div>
-          <label class="field-label">End Date</label>
-          <input class="field-input" type="date" id="sr-end" style="background:var(--bg2);color:var(--text);border:1px solid var(--border);color-scheme:dark;">
-        </div>
-      </div>
-      <div class="form-row" style="margin-bottom:20px;">
-        <label class="field-label">Notes (optional)</label>
-        <input class="field-input" id="sr-notes" placeholder="e.g. Sports broadcast, need by 3pm" autocomplete="off" style="background:var(--bg2);color:var(--text);border:1px solid var(--border);">
-      </div>
-      <div id="sr-err" style="color:var(--red);font-size:13px;margin-bottom:12px;min-height:16px;"></div>
-      <button class="btn" onclick="submitStudentRequest()">Submit Request</button>
-      <div style="margin-top:32px;">
-        <div class="section-header" style="padding:0 0 12px;">My Requests</div>
-        <div id="my-requests-list"></div>
-      </div>
-    </div>
+  <div class="scroll-body" id="sched-body">
+    <!-- filled dynamically by renderScheduleScreen() -->
   </div>
 </div>
 
@@ -900,21 +842,15 @@ function navTo(name) {
   if (name === 'scanner') { currentItem = null; document.getElementById('item-card').classList.remove('visible'); document.getElementById('bc-input').value = ''; }
   if (name === 'schedule') {
     const isAdmin = !!(currentUser && currentUser.role === 'admin');
-    const adminView = document.getElementById('sched-admin-view');
-    const studentView = document.getElementById('sched-student-view');
-    // Always show one view — never leave both hidden
-    adminView.style.display = isAdmin ? 'flex' : 'none';
-    studentView.style.display = isAdmin ? 'none' : 'flex';
     document.getElementById('sched-add-btn').style.display = isAdmin ? '' : 'none';
     document.getElementById('sched-add-placeholder').style.display = isAdmin ? 'none' : '';
     if (isAdmin) {
       calYear = new Date().getFullYear(); calMonth = new Date().getMonth(); calSelectedDate = null;
-      renderCalendar();
+      renderScheduleAdmin();
     } else {
       const preId = pendingSchedItemId;
       pendingSchedItemId = null;
-      populateStudentForm(preId);
-      renderMyRequests();
+      renderScheduleStudent(preId);
     }
   }
 }
@@ -1360,6 +1296,118 @@ async function deleteReservation(id) {
   toast('Reservation deleted');
 }
 
+// ── SCHEDULE RENDERERS ──
+function renderScheduleAdmin() {
+  document.getElementById('sched-body').innerHTML = `
+    <div class="cal-header">
+      <div class="cal-month" id="cal-month-label"></div>
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="calShift(-1)">&#8249;</button>
+        <button class="cal-nav-btn" onclick="calShift(1)">&#8250;</button>
+      </div>
+    </div>
+    <div class="cal-grid">
+      <div class="cal-dow">Su</div><div class="cal-dow">Mo</div><div class="cal-dow">Tu</div>
+      <div class="cal-dow">We</div><div class="cal-dow">Th</div><div class="cal-dow">Fr</div><div class="cal-dow">Sa</div>
+      <div id="cal-cells"></div>
+    </div>
+    <div class="cal-divider"></div>
+    <div class="cal-day-detail">
+      <div class="cal-day-title" id="cal-selected-label">Select a day to view reservations</div>
+      <div id="cal-day-events"></div>
+    </div>
+    <div class="upcoming-section">
+      <div class="section-header" style="padding:0 0 12px;">All Upcoming Reservations</div>
+      <div id="upcoming-list"></div>
+    </div>`;
+  renderCalendar();
+}
+
+function renderScheduleStudent(preSelectItemId) {
+  const today = new Date().toISOString().split('T')[0];
+  const itemOptions = db.equipment
+    .filter(e => !e.status || e.status === 'In Stock' || e.status === 'Signed Out')
+    .map(e => `<option value="${e.id}"${preSelectItemId === e.id ? ' selected' : ''}>${e.name} (${e.barcode})</option>`)
+    .join('');
+
+  const mine = (db.reservations || [])
+    .filter(r => r.userId === currentUser.id)
+    .sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+
+  const myRequestsHtml = mine.length === 0
+    ? '<div class="sched-empty">You have no requests yet.</div>'
+    : mine.map(r => {
+        const item = db.equipment.find(e => e.id === r.itemId);
+        const startFmt = new Date(r.startDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+        const endFmt = new Date(r.endDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+        const span = r.startDate === r.endDate ? startFmt : `${startFmt} \u2013 ${endFmt}`;
+        const isPast = r.endDate < today;
+        return `<div class="sched-card" style="${isPast?'opacity:0.5;':''}">
+          <div class="sched-card-top">
+            <div class="sched-item-name">${item ? item.name : r.itemName}</div>
+            <span class="badge ${isPast?'badge-cat':'badge-available'}" style="font-size:10px;">${isPast?'Past':'Upcoming'}</span>
+          </div>
+          <div class="sched-meta"><div class="sched-meta-item">${span}</div></div>
+          ${r.notes ? `<div class="sched-notes">${r.notes}</div>` : ''}
+        </div>`;
+      }).join('');
+
+  document.getElementById('sched-body').innerHTML = `
+    <div style="padding:20px;">
+      <div style="background:var(--accent-dim);border:1px solid var(--accent-glow);border-radius:var(--radius);padding:16px;margin-bottom:24px;">
+        <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px;">Equipment Request</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.5;">Fill out the form below to reserve equipment. An admin will review your request.</div>
+      </div>
+      <div class="form-row" style="margin-bottom:16px;">
+        <label class="field-label">Equipment Item</label>
+        <select class="field-select" id="sr-item" style="background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm);width:100%;padding:13px 16px;font-family:var(--font);font-size:14px;outline:none;-webkit-appearance:none;">${itemOptions}</select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div>
+          <label class="field-label">Start Date</label>
+          <input class="field-input" type="date" id="sr-start" value="${today}" style="background:var(--bg2);color:var(--text);border:1px solid var(--border);color-scheme:dark;">
+        </div>
+        <div>
+          <label class="field-label">End Date</label>
+          <input class="field-input" type="date" id="sr-end" value="${today}" style="background:var(--bg2);color:var(--text);border:1px solid var(--border);color-scheme:dark;">
+        </div>
+      </div>
+      <div class="form-row" style="margin-bottom:20px;">
+        <label class="field-label">Notes (optional)</label>
+        <input class="field-input" id="sr-notes" placeholder="e.g. Sports broadcast, need by 3pm" autocomplete="off" style="background:var(--bg2);color:var(--text);border:1px solid var(--border);">
+      </div>
+      <div id="sr-err" style="color:var(--red);font-size:13px;margin-bottom:12px;min-height:16px;"></div>
+      <button class="btn" onclick="submitStudentRequest()">Submit Request</button>
+      <div style="margin-top:32px;">
+        <div class="section-header" style="padding:0 0 12px;">My Requests</div>
+        <div id="my-requests-list">${myRequestsHtml}</div>
+      </div>
+    </div>`;
+}
+
+function renderMyRequests() {
+  const el = document.getElementById('my-requests-list');
+  if (!el) return;
+  const today = new Date().toISOString().split('T')[0];
+  const mine = (db.reservations || []).filter(r => r.userId === currentUser.id).sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+  if (mine.length === 0) { el.innerHTML = '<div class="sched-empty">You have no requests yet.</div>'; return; }
+  el.innerHTML = mine.map(r => {
+    const item = db.equipment.find(e => e.id === r.itemId);
+    const startFmt = new Date(r.startDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const endFmt = new Date(r.endDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const span = r.startDate === r.endDate ? startFmt : `${startFmt} \u2013 ${endFmt}`;
+    const isPast = r.endDate < today;
+    return `<div class="sched-card" style="${isPast?'opacity:0.5;':''}">
+      <div class="sched-card-top">
+        <div class="sched-item-name">${item ? item.name : r.itemName}</div>
+        <span class="badge ${isPast?'badge-cat':'badge-available'}" style="font-size:10px;">${isPast?'Past':'Upcoming'}</span>
+      </div>
+      <div class="sched-meta"><div class="sched-meta-item">${span}</div></div>
+      ${r.notes ? `<div class="sched-notes">${r.notes}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
 // ── STUDENT SCHEDULE ──
 let pendingSchedItemId = null;
 
@@ -1371,15 +1419,6 @@ function scheduleFromScan() {
     pendingSchedItemId = currentItem.id;
     navTo('schedule');
   }
-}
-
-function populateStudentForm(preSelectItemId) {
-  const sel = document.getElementById('sr-item');
-  sel.innerHTML = db.equipment.filter(e => !e.status || e.status === 'In Stock' || e.status === 'Signed Out').map(e => `<option value="${e.id}">${e.name} (${e.barcode})</option>`).join('');
-  if (preSelectItemId) sel.value = preSelectItemId;
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('sr-start').value = today;
-  document.getElementById('sr-end').value = today;
 }
 
 async function submitStudentRequest() {
@@ -1401,27 +1440,6 @@ async function submitStudentRequest() {
   toast('Request submitted ✓', 'success');
 }
 
-function renderMyRequests() {
-  const mine = (db.reservations || []).filter(r => r.userId === currentUser.id).sort((a,b) => b.createdAt.localeCompare(a.createdAt));
-  const el = document.getElementById('my-requests-list');
-  const today = new Date().toISOString().split('T')[0];
-  if (mine.length === 0) { el.innerHTML = '<div class="sched-empty">You have no requests yet.</div>'; return; }
-  el.innerHTML = mine.map(r => {
-    const item = db.equipment.find(e => e.id === r.itemId);
-    const startFmt = new Date(r.startDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
-    const endFmt = new Date(r.endDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
-    const span = r.startDate === r.endDate ? startFmt : `${startFmt} – ${endFmt}`;
-    const isPast = r.endDate < today;
-    return `<div class="sched-card" style="${isPast ? 'opacity:0.5;' : ''}">
-      <div class="sched-card-top">
-        <div class="sched-item-name">${item ? item.name : r.itemName}</div>
-        <span class="badge ${isPast ? 'badge-cat' : 'badge-available'}" style="font-size:10px;">${isPast ? 'Past' : 'Upcoming'}</span>
-      </div>
-      <div class="sched-meta"><div class="sched-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${span}</div></div>
-      ${r.notes ? `<div class="sched-notes">${r.notes}</div>` : ''}
-    </div>`;
-  }).join('');
-}
 
 // ── CAPS LOCK ──
 function checkCapsLock(e) {
