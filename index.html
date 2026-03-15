@@ -190,6 +190,34 @@
   .equip-name { font-size: 14px; font-weight: 700; }
   .equip-meta { font-size: 11px; font-family: var(--mono); color: var(--text3); margin-top: 3px; }
 
+  /* ── AUDIT ── */
+  .audit-status-bar { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .audit-progress-wrap { flex: 1; }
+  .audit-progress-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .audit-progress-bar { height: 6px; background: var(--bg4); border-radius: 99px; overflow: hidden; }
+  .audit-progress-fill { height: 100%; background: var(--green); border-radius: 99px; transition: width 0.3s ease; }
+  .audit-scan-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .audit-scan-row input { flex: 1; }
+  .audit-item-row { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; transition: all 0.2s; }
+  .audit-item-row.scanned { border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.06); }
+  .audit-item-row.missing { border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.06); }
+  .audit-check { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--border2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .audit-item-row.scanned .audit-check { background: var(--green); border-color: var(--green); }
+  .audit-item-row.missing .audit-check { background: var(--red-dim); border-color: var(--red); }
+  .audit-check svg { width: 12px; height: 12px; display: none; }
+  .audit-item-row.scanned .audit-check svg { display: block; stroke: #fff; }
+  .audit-item-row.missing .audit-check svg { display: block; stroke: var(--red); }
+  .audit-item-info { flex: 1; min-width: 0; }
+  .audit-item-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .audit-item-bc { font-size: 11px; font-family: var(--mono); color: var(--text3); margin-top: 1px; }
+  .audit-history-row { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; cursor: pointer; }
+  .audit-history-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .audit-history-title { font-size: 14px; font-weight: 700; }
+  .audit-history-meta { font-size: 12px; color: var(--text2); display: flex; gap: 12px; }
+  .audit-filter-row { display: flex; gap: 7px; margin-bottom: 14px; }
+  .audit-filter-btn { font-family: var(--font); font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 99px; border: 1px solid var(--border); background: var(--bg3); color: var(--text2); cursor: pointer; transition: all 0.15s; }
+  .audit-filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
   /* ── MODAL / SHEET ── */
   .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999; display: flex; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
   .sheet-overlay.open { opacity: 1; pointer-events: all; }
@@ -275,7 +303,8 @@
     </div>
     <div class="field">
       <label class="field-label">Password</label>
-      <input class="field-input" type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password">
+      <input class="field-input" type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password" onkeyup="checkCapsLock(event)">
+      <div id="caps-warning" style="display:none;margin-top:6px;font-size:12px;color:var(--amber);font-weight:600;letter-spacing:0.03em;">⇪ Caps Lock is on</div>
     </div>
     <button class="btn" onclick="doLogin()">Sign In</button>
     <div class="login-err" id="login-err"></div>
@@ -394,6 +423,9 @@
         <div class="item-meta"><span class="badge badge-cat" id="ic-cat"></span></div>
         <div class="item-who" id="ic-who"></div>
         <button class="action-btn" id="ic-action-btn" onclick="doAction()"></button>
+        <button class="action-btn" id="ic-sched-btn" onclick="scheduleFromScan()" style="margin-top:10px;background:var(--bg3);color:var(--text);border:1px solid var(--border2);font-size:14px;">
+          <span style="margin-right:6px;">📅</span> Schedule This Item
+        </button>
       </div>
     </div>
   </div>
@@ -438,6 +470,7 @@
     <div class="admin-tab active" onclick="adminTab('users',this)">Users</div>
     <div class="admin-tab" onclick="adminTab('equipment',this)">Equipment</div>
     <div class="admin-tab" onclick="adminTab('alllogs',this)">Full Log</div>
+    <div class="admin-tab" onclick="adminTab('audit',this)">Audit</div>
   </div>
 
   <!-- Users Panel -->
@@ -482,7 +515,61 @@
       <div id="admin-all-logs"></div>
     </div>
   </div>
-</div>
+
+  <!-- Audit Panel -->
+  <div class="panel" id="panel-audit">
+    <div class="panel-body" style="padding-bottom:32px;">
+
+      <!-- Active audit or start button -->
+      <div id="audit-idle-view">
+        <div style="background:var(--accent-dim);border:1px solid var(--accent-glow);border-radius:var(--radius);padding:18px;margin-bottom:20px;">
+          <div style="font-size:15px;font-weight:800;margin-bottom:6px;">Inventory Audit</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6;">Scan every item to verify it's accounted for. Any item not scanned will be marked as missing in the audit report.</div>
+        </div>
+        <input class="field-input" id="audit-label-input" placeholder="Audit label (e.g. End of Year 2025-26)" autocomplete="off" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);margin-bottom:12px;">
+        <button class="btn" style="margin-top:0;" onclick="startAudit()">Start New Audit</button>
+        <div class="panel-section">Past Audits</div>
+        <div id="audit-history-list"></div>
+      </div>
+
+      <!-- In-progress audit -->
+      <div id="audit-active-view" style="display:none;">
+        <div class="audit-status-bar">
+          <div class="audit-progress-wrap">
+            <div class="audit-progress-label">
+              <span id="audit-progress-text">0 of 0 scanned</span>
+              <span id="audit-progress-pct" style="font-weight:700;color:var(--green);">0%</span>
+            </div>
+            <div class="audit-progress-bar"><div class="audit-progress-fill" id="audit-progress-fill" style="width:0%"></div></div>
+          </div>
+        </div>
+        <div class="audit-scan-row">
+          <input class="field-input" id="audit-bc-input" placeholder="Scan or type barcode…" autocomplete="off" autocorrect="off" autocapitalize="characters" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);" oninput="auditBarcodeInput(this.value)" onkeydown="if(event.key==='Enter')auditScanBarcode()">
+          <button class="cam-btn" style="width:auto;padding:13px 16px;flex-shrink:0;" onclick="auditScanBarcode()">Scan</button>
+        </div>
+        <div class="audit-filter-row">
+          <button class="audit-filter-btn active" onclick="setAuditFilter('all',this)">All</button>
+          <button class="audit-filter-btn" onclick="setAuditFilter('pending',this)">Pending</button>
+          <button class="audit-filter-btn" onclick="setAuditFilter('scanned',this)">Scanned</button>
+        </div>
+        <div id="audit-items-list"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px;">
+          <button class="btn btn-ghost" onclick="cancelAudit()">Cancel</button>
+          <button class="btn" onclick="finalizeAudit()">Finalize Audit</button>
+        </div>
+      </div>
+
+      <!-- Audit report view -->
+      <div id="audit-report-view" style="display:none;">
+        <button class="back-btn" onclick="showAuditIdle()" style="margin-bottom:16px;color:var(--accent);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:16px;height:16px;"><polyline points="15 18 9 12 15 6"/></svg>
+          All Audits
+        </button>
+        <div id="audit-report-content"></div>
+      </div>
+
+    </div>
+  </div>
 
 <!-- ════════════════════════════════════ SCHEDULE ════════════════════════════════════ -->
 <div class="screen hidden" id="screen-schedule">
@@ -965,12 +1052,6 @@ function renderLogs() {
 }
 
 // ── ADMIN ──
-function adminTab(name, el) {
-  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('panel-'+name).classList.add('active');
-}
 
 function renderAdminUsers() {
   const el = document.getElementById('admin-users-list');
@@ -1028,9 +1109,9 @@ function renderAdminAllLogs() {
 }
 
 // ── USER MGMT ──
-function openSheet(id) {
+function openSheet(id, preSelectItemId) {
   document.getElementById(id).classList.add('open');
-  if (id === 'sheet-new-sched') populateSchedSheet();
+  if (id === 'sheet-new-sched') populateSchedSheet(preSelectItemId);
 }
 function closeSheet(id) { document.getElementById(id).classList.remove('open'); }
 function sheetOverlayClick(e, id) { if (e.target === e.currentTarget) closeSheet(id); }
@@ -1208,11 +1289,14 @@ function calShift(dir) {
   renderCalendar();
 }
 
-function populateSchedSheet() {
+function populateSchedSheet(preSelectItemId) {
   const itemSel = document.getElementById('ns-item');
   const userSel = document.getElementById('ns-user');
   itemSel.innerHTML = db.equipment.map(e => `<option value="${e.id}">${e.name} (${e.barcode})</option>`).join('');
   userSel.innerHTML = db.users.map(u => `<option value="${u.id}">${u.name} (@${u.username})</option>`).join('');
+  if (preSelectItemId) itemSel.value = preSelectItemId;
+  // Pre-select current user
+  if (currentUser) userSel.value = currentUser.id;
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('ns-start').value = today;
   document.getElementById('ns-end').value = today;
@@ -1249,9 +1333,20 @@ async function deleteReservation(id) {
 }
 
 // ── STUDENT SCHEDULE ──
-function populateStudentForm() {
+function scheduleFromScan() {
+  if (!currentItem) return;
+  if (currentUser.role === 'admin') {
+    openSheet('sheet-new-sched', currentItem.id);
+  } else {
+    navTo('schedule');
+    setTimeout(() => populateStudentForm(currentItem.id), 100);
+  }
+}
+
+function populateStudentForm(preSelectItemId) {
   const sel = document.getElementById('sr-item');
   sel.innerHTML = db.equipment.filter(e => !e.status || e.status === 'In Stock' || e.status === 'Signed Out').map(e => `<option value="${e.id}">${e.name} (${e.barcode})</option>`).join('');
+  if (preSelectItemId) sel.value = preSelectItemId;
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('sr-start').value = today;
   document.getElementById('sr-end').value = today;
@@ -1296,6 +1391,233 @@ function renderMyRequests() {
       ${r.notes ? `<div class="sched-notes">${r.notes}</div>` : ''}
     </div>`;
   }).join('');
+}
+
+// ── CAPS LOCK ──
+function checkCapsLock(e) {
+  const warn = document.getElementById('caps-warning');
+  if (e.getModifierState) {
+    warn.style.display = e.getModifierState('CapsLock') ? 'block' : 'none';
+  }
+}
+
+// ── AUDIT ──
+let activeAudit = null; // { label, startedAt, scanned: Set of barcodes }
+let auditFilter = 'all';
+
+function adminTab(name, el) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  if (name === 'audit') renderAuditHistory();
+}
+
+function startAudit() {
+  const label = document.getElementById('audit-label-input').value.trim() || `Audit ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+  activeAudit = { label, startedAt: new Date().toISOString(), scanned: new Set() };
+  auditFilter = 'all';
+  document.getElementById('audit-idle-view').style.display = 'none';
+  document.getElementById('audit-active-view').style.display = 'block';
+  document.getElementById('audit-report-view').style.display = 'none';
+  renderAuditItems();
+  updateAuditProgress();
+  setTimeout(() => document.getElementById('audit-bc-input').focus(), 100);
+}
+
+function cancelAudit() {
+  if (!confirm('Cancel this audit? Progress will be lost.')) return;
+  activeAudit = null;
+  showAuditIdle();
+}
+
+async function finalizeAudit() {
+  if (!activeAudit) return;
+  const total = db.equipment.length;
+  const scannedArr = [...activeAudit.scanned];
+  const missingItems = db.equipment.filter(e => !activeAudit.scanned.has(e.barcode));
+  const auditDoc = {
+    label: activeAudit.label,
+    startedAt: activeAudit.startedAt,
+    finalizedAt: new Date().toISOString(),
+    totalItems: total,
+    scannedCount: scannedArr.length,
+    missingCount: missingItems.length,
+    scannedBarcodes: scannedArr,
+    missingItems: missingItems.map(e => ({ id: e.id, name: e.name, barcode: e.barcode, category: e.category, location: e.location || '' }))
+  };
+  const id = nextId();
+  await COL.meta.doc('audit_' + id).set(auditDoc);
+  if (!db.audits) db.audits = [];
+  db.audits.unshift({ id, ...auditDoc });
+  toast(`Audit finalized — ${missingItems.length} item${missingItems.length !== 1 ? 's' : ''} missing`, missingItems.length === 0 ? 'success' : '');
+  activeAudit = null;
+  showAuditIdle();
+  viewAuditReport({ id, ...auditDoc });
+}
+
+function showAuditIdle() {
+  activeAudit = null;
+  document.getElementById('audit-idle-view').style.display = 'block';
+  document.getElementById('audit-active-view').style.display = 'none';
+  document.getElementById('audit-report-view').style.display = 'none';
+  renderAuditHistory();
+}
+
+async function renderAuditHistory() {
+  // Load from Firestore if not cached
+  if (!db.audits) {
+    const snap = await COL.meta.where('totalItems', '>', 0).get().catch(() => null);
+    if (snap) {
+      db.audits = snap.docs
+        .filter(d => d.id.startsWith('audit_'))
+        .map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => b.finalizedAt?.localeCompare(a.finalizedAt));
+    } else { db.audits = []; }
+  }
+  const el = document.getElementById('audit-history-list');
+  if (!db.audits || db.audits.length === 0) {
+    el.innerHTML = '<div class="empty" style="padding:24px 0;">No audits completed yet.</div>';
+    return;
+  }
+  el.innerHTML = db.audits.map(a => {
+    const date = new Date(a.finalizedAt || a.startedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const pct = Math.round((a.scannedCount / a.totalItems) * 100);
+    return `<div class="audit-history-row" onclick="viewAuditReport(${JSON.stringify(a).replace(/"/g,'&quot;')})">
+      <div class="audit-history-top">
+        <div class="audit-history-title">${a.label}</div>
+        <span class="badge ${a.missingCount === 0 ? 'badge-available' : 'badge-out'}">${a.missingCount === 0 ? 'Full' : `${a.missingCount} missing`}</span>
+      </div>
+      <div class="audit-history-meta">
+        <span>${date}</span>
+        <span>${a.scannedCount}/${a.totalItems} scanned (${pct}%)</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function viewAuditReport(audit) {
+  document.getElementById('audit-idle-view').style.display = 'none';
+  document.getElementById('audit-active-view').style.display = 'none';
+  document.getElementById('audit-report-view').style.display = 'block';
+  const date = new Date(audit.finalizedAt || audit.startedAt).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const pct = Math.round((audit.scannedCount / audit.totalItems) * 100);
+  const missing = audit.missingItems || [];
+  const el = document.getElementById('audit-report-content');
+  el.innerHTML = `
+    <div style="margin-bottom:20px;">
+      <div style="font-size:20px;font-weight:800;letter-spacing:-0.3px;margin-bottom:4px;">${audit.label}</div>
+      <div style="font-size:12px;color:var(--text2);">${date}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:24px;">
+      <div class="stat-card"><div class="stat-num accent">${audit.totalItems}</div><div class="stat-lbl">Total</div></div>
+      <div class="stat-card"><div class="stat-num green">${audit.scannedCount}</div><div class="stat-lbl">Scanned</div></div>
+      <div class="stat-card"><div class="stat-num ${audit.missingCount > 0 ? 'amber' : 'green'}">${audit.missingCount}</div><div class="stat-lbl">Missing</div></div>
+    </div>
+    <div style="margin-bottom:8px;">
+      <div class="audit-progress-label"><span style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);">Coverage</span><span style="font-weight:700;color:var(--green);">${pct}%</span></div>
+      <div class="audit-progress-bar"><div class="audit-progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    ${missing.length === 0
+      ? `<div style="background:var(--green-dim);border:1px solid rgba(34,197,94,0.25);border-radius:var(--radius);padding:18px;text-align:center;margin-top:20px;">
+           <div style="font-size:15px;font-weight:800;color:var(--green);margin-bottom:4px;">All items accounted for</div>
+           <div style="font-size:12px;color:var(--text2);">Every item in inventory was scanned.</div>
+         </div>`
+      : `<div class="panel-section" style="margin-top:24px;">Missing Items (${missing.length})</div>
+         ${missing.map(m => `
+           <div class="audit-item-row missing">
+             <div class="audit-check"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+             <div class="audit-item-info">
+               <div class="audit-item-name">${m.name}</div>
+               <div class="audit-item-bc">${m.barcode} · ${m.category}${m.location ? ' · ' + m.location : ''}</div>
+             </div>
+           </div>`).join('')}
+        `}
+  `;
+}
+
+function auditBarcodeInput(val) {
+  if (!activeAudit || val.length < 2) return;
+  const item = db.equipment.find(e => e.barcode.toLowerCase().startsWith(val.toLowerCase()));
+  if (item && !activeAudit.scanned.has(item.barcode)) {
+    // auto-scan on exact match
+    if (item.barcode.toLowerCase() === val.toLowerCase()) {
+      activeAudit.scanned.add(item.barcode);
+      document.getElementById('audit-bc-input').value = '';
+      renderAuditItems();
+      updateAuditProgress();
+      toast(`✓ ${item.name}`, 'success');
+    }
+  }
+}
+
+function auditScanBarcode() {
+  if (!activeAudit) return;
+  const val = document.getElementById('audit-bc-input').value.trim().toUpperCase();
+  if (!val) return;
+  const item = db.equipment.find(e => e.barcode.toUpperCase() === val);
+  if (!item) { toast('Barcode not found in inventory', 'error'); return; }
+  if (activeAudit.scanned.has(item.barcode)) { toast('Already scanned', ''); document.getElementById('audit-bc-input').value = ''; return; }
+  activeAudit.scanned.add(item.barcode);
+  document.getElementById('audit-bc-input').value = '';
+  renderAuditItems();
+  updateAuditProgress();
+  toast(`✓ ${item.name}`, 'success');
+  document.getElementById('audit-bc-input').focus();
+}
+
+function setAuditFilter(f, el) {
+  auditFilter = f;
+  document.querySelectorAll('.audit-filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderAuditItems();
+}
+
+function renderAuditItems() {
+  if (!activeAudit) return;
+  let items = [...db.equipment];
+  if (auditFilter === 'scanned') items = items.filter(e => activeAudit.scanned.has(e.barcode));
+  else if (auditFilter === 'pending') items = items.filter(e => !activeAudit.scanned.has(e.barcode));
+  // Sort: pending first, then scanned
+  items.sort((a, b) => {
+    const aScanned = activeAudit.scanned.has(a.barcode);
+    const bScanned = activeAudit.scanned.has(b.barcode);
+    if (aScanned === bScanned) return a.name.localeCompare(b.name);
+    return aScanned ? 1 : -1;
+  });
+  const el = document.getElementById('audit-items-list');
+  el.innerHTML = items.map(e => {
+    const scanned = activeAudit.scanned.has(e.barcode);
+    return `<div class="audit-item-row ${scanned ? 'scanned' : ''}">
+      <div class="audit-check">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round">
+          ${scanned ? '<polyline points="20 6 9 17 4 12"/>' : ''}
+        </svg>
+      </div>
+      <div class="audit-item-info">
+        <div class="audit-item-name">${e.name}</div>
+        <div class="audit-item-bc">${e.barcode} · ${e.category}</div>
+      </div>
+      ${!scanned ? `<button class="audit-filter-btn" style="font-size:11px;padding:5px 10px;" onclick="manualAuditCheck('${e.barcode}')">Mark</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function manualAuditCheck(barcode) {
+  if (!activeAudit) return;
+  activeAudit.scanned.add(barcode);
+  renderAuditItems();
+  updateAuditProgress();
+}
+
+function updateAuditProgress() {
+  if (!activeAudit) return;
+  const total = db.equipment.length;
+  const scanned = activeAudit.scanned.size;
+  const pct = total > 0 ? Math.round((scanned / total) * 100) : 0;
+  document.getElementById('audit-progress-text').textContent = `${scanned} of ${total} scanned`;
+  document.getElementById('audit-progress-pct').textContent = pct + '%';
+  document.getElementById('audit-progress-fill').style.width = pct + '%';
 }
 
 // ── KEYBOARD ──
