@@ -282,6 +282,12 @@
 </head>
 <body>
 
+<div id="loading-overlay" style="display:none;position:fixed;inset:0;background:rgba(12,12,14,0.92);z-index:9998;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+  <div style="width:40px;height:40px;border:3px solid rgba(224,32,32,0.2);border-top-color:#e02020;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+  <div style="font-size:13px;font-weight:600;color:#888;letter-spacing:0.05em;">Connecting...</div>
+</div>
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -587,7 +593,7 @@
   </div>
 
   <!-- ── ADMIN VIEW: full calendar ── -->
-  <div id="sched-admin-view" style="display:none;flex:1;overflow:hidden;flex-direction:column;display:none;">
+  <div id="sched-admin-view" style="display:none;flex:1;overflow:hidden;flex-direction:column;">
     <div class="scroll-body">
       <div class="cal-header">
         <div class="cal-month" id="cal-month-label">March 2026</div>
@@ -746,12 +752,13 @@ const SEED_EQUIPMENT = [{"id":"e94601","name":"Canon R6 (1)","barcode":"94601","
 async function loadFromFirestore() {
   showLoading(true);
   try {
-    const [uSnap, eSnap, lSnap, rSnap, mSnap] = await Promise.all([
+    const [uSnap, eSnap, lSnap, rSnap, mSnap, seedSnap] = await Promise.all([
       COL.users.get(),
       COL.equipment.get(),
       COL.logs.orderBy('time','desc').limit(500).get(),
       COL.reservations.get(),
-      COL.meta.doc('config').get()
+      COL.meta.doc('config').get(),
+      COL.meta.doc('seeded').get()
     ]);
     db.users = uSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     db.equipment = eSnap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -759,8 +766,8 @@ async function loadFromFirestore() {
     db.reservations = rSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     db.counter = mSnap.exists ? (mSnap.data().counter || 200) : 200;
 
-    // First-time setup: seed users and equipment
-    if (db.users.length === 0) await seedInitialData();
+    // Only seed if the seeded flag has never been written
+    if (!seedSnap.exists) await seedInitialData();
   } catch(e) {
     console.error('Firestore load error:', e);
     toast('Connection error. Check internet and try again.', 'error');
@@ -769,13 +776,18 @@ async function loadFromFirestore() {
 }
 
 async function seedInitialData() {
+  // Check a dedicated flag so we NEVER re-seed if data already exists
+  const flagSnap = await COL.meta.doc('seeded').get();
+  if (flagSnap.exists) return; // already seeded, never touch existing data
+
   toast('Setting up database for the first time…');
+
   // Seed admin user
   const adminId = 'u1';
   await COL.users.doc(adminId).set({ name:'Admin', username:'admin', password:'studio2025', role:'admin' });
   db.users = [{ id: adminId, name:'Admin', username:'admin', password:'studio2025', role:'admin' }];
 
-  // Batch-write equipment (max 500 per batch)
+  // Batch-write equipment (max 499 per batch)
   const batches = [];
   let batch = fdb.batch();
   let count = 0;
@@ -789,7 +801,10 @@ async function seedInitialData() {
   if (count > 0) batches.push(batch);
   await Promise.all(batches.map(b => b.commit()));
   db.equipment = SEED_EQUIPMENT;
+
   await COL.meta.doc('config').set({ counter: 200 });
+  // Write the flag last — if anything above failed, it will retry on next load
+  await COL.meta.doc('seeded').set({ at: new Date().toISOString() });
   toast('Database ready ✓', 'success');
 }
 
@@ -886,8 +901,15 @@ function navTo(name) {
     document.getElementById('sched-student-view').style.display = isAdmin ? 'none' : 'block';
     document.getElementById('sched-add-btn').style.display = isAdmin ? '' : 'none';
     document.getElementById('sched-add-placeholder').style.display = isAdmin ? 'none' : '';
-    if (isAdmin) { calYear = new Date().getFullYear(); calMonth = new Date().getMonth(); calSelectedDate = null; renderCalendar(); }
-    else { populateStudentForm(); renderMyRequests(); }
+    if (isAdmin) {
+      calYear = new Date().getFullYear(); calMonth = new Date().getMonth(); calSelectedDate = null;
+      renderCalendar();
+    } else {
+      const preId = pendingSchedItemId;
+      pendingSchedItemId = null;
+      populateStudentForm(preId);
+      renderMyRequests();
+    }
   }
 }
 
@@ -1333,13 +1355,15 @@ async function deleteReservation(id) {
 }
 
 // ── STUDENT SCHEDULE ──
+let pendingSchedItemId = null;
+
 function scheduleFromScan() {
   if (!currentItem) return;
   if (currentUser.role === 'admin') {
     openSheet('sheet-new-sched', currentItem.id);
   } else {
+    pendingSchedItemId = currentItem.id;
     navTo('schedule');
-    setTimeout(() => populateStudentForm(currentItem.id), 100);
   }
 }
 
@@ -1625,7 +1649,7 @@ document.getElementById('l-pass').addEventListener('keydown', e => { if (e.key =
 document.getElementById('l-user').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('l-pass').focus(); });
 
 // ── AUTO-LOGIN ON PAGE LOAD ──
-(async function() {
+document.addEventListener('DOMContentLoaded', async function() {
   const savedId = localStorage.getItem('ptv_saved_user');
   if (!savedId) return;
   await loadFromFirestore();
@@ -1637,13 +1661,8 @@ document.getElementById('l-user').addEventListener('keydown', e => { if (e.key =
   });
   showScreen('screen-home');
   refreshHome();
-})();
+});
 </script>
 
-<div id="loading-overlay" style="display:none;position:fixed;inset:0;background:rgba(12,12,14,0.92);z-index:9998;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
-  <div style="width:40px;height:40px;border:3px solid rgba(224,32,32,0.2);border-top-color:#e02020;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-  <div style="font-size:13px;font-weight:600;color:#888;letter-spacing:0.05em;">Connecting...</div>
-</div>
-<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
 </body>
 </html>
