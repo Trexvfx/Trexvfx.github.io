@@ -592,8 +592,8 @@
   </div>
 
   <!-- ── ADMIN VIEW ── -->
-  <div id="sched-admin-view" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
-    <div class="scroll-body">
+  <div id="sched-admin-view" style="display:none;flex:1;min-height:0;flex-direction:column;overflow:hidden;">
+    <div class="scroll-body" style="flex:1;">
       <div class="cal-header">
         <div class="cal-month" id="cal-month-label">March 2026</div>
         <div class="cal-nav">
@@ -619,7 +619,7 @@
   </div>
 
   <!-- ── STUDENT VIEW ── -->
-  <div id="sched-student-view" style="display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+  <div id="sched-student-view" style="display:none;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;">
     <div style="padding:20px;">
       <div style="background:var(--accent-dim);border:1px solid var(--accent-glow);border-radius:var(--radius);padding:16px;margin-bottom:24px;">
         <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px;">Equipment Request</div>
@@ -894,9 +894,10 @@ function navTo(name) {
   if (name === 'admin') { renderAdminUsers(); renderAdminEquip(); renderAdminAllLogs(); }
   if (name === 'scanner') { currentItem = null; document.getElementById('item-card').classList.remove('visible'); document.getElementById('bc-input').value = ''; }
   if (name === 'schedule') {
-    const isAdmin = currentUser && currentUser.role === 'admin';
+    const isAdmin = !!(currentUser && currentUser.role === 'admin');
     const adminView = document.getElementById('sched-admin-view');
     const studentView = document.getElementById('sched-student-view');
+    // Always show one view — never leave both hidden
     adminView.style.display = isAdmin ? 'flex' : 'none';
     studentView.style.display = isAdmin ? 'none' : 'flex';
     document.getElementById('sched-add-btn').style.display = isAdmin ? '' : 'none';
