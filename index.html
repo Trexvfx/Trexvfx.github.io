@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>PTVequip</title>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -716,25 +714,32 @@
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script>
 // ── FIREBASE INIT ──
-const firebaseConfig = {
-  apiKey: "AIzaSyDmvynzZZFsbZSkkEd4CkL1BgGEDaKmwQ4",
-  authDomain: "ptveqiup.firebaseapp.com",
-  projectId: "ptveqiup",
-  storageBucket: "ptveqiup.firebasestorage.app",
-  messagingSenderId: "711904434049",
-  appId: "1:711904434049:web:9ccca9b42c982faf397a80"
-};
-firebase.initializeApp(firebaseConfig);
-const fdb = firebase.firestore();
-const COL = {
-  users: fdb.collection('users'),
-  equipment: fdb.collection('equipment'),
-  logs: fdb.collection('logs'),
-  reservations: fdb.collection('reservations'),
-  meta: fdb.collection('meta')
-};
+let fdb, COL;
+try {
+  const firebaseConfig = {
+    apiKey: "AIzaSyDmvynzZZFsbZSkkEd4CkL1BgGEDaKmwQ4",
+    authDomain: "ptveqiup.firebaseapp.com",
+    projectId: "ptveqiup",
+    storageBucket: "ptveqiup.firebasestorage.app",
+    messagingSenderId: "711904434049",
+    appId: "1:711904434049:web:9ccca9b42c982faf397a80"
+  };
+  firebase.initializeApp(firebaseConfig);
+  fdb = firebase.firestore();
+  COL = {
+    users: fdb.collection('users'),
+    equipment: fdb.collection('equipment'),
+    logs: fdb.collection('logs'),
+    reservations: fdb.collection('reservations'),
+    meta: fdb.collection('meta')
+  };
+} catch(e) {
+  console.error('Firebase init failed:', e);
+}
 
 // ── IN-MEMORY CACHE ──
 let db = { users:[], equipment:[], logs:[], reservations:[], counter:200 };
