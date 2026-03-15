@@ -31,12 +31,15 @@
     --mono: 'DM Mono', monospace;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); overflow: hidden; }
+  html, body { height: 100%; background: #000; color: var(--text); font-family: var(--font); overflow: hidden; }
+  /* Center app on desktop */
+  body { display: flex; justify-content: center; }
+  body::before { content: ''; position: fixed; inset: 0; background: #000; z-index: -1; }
 
   /* ── SCREENS ── */
-  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; background: var(--bg); transition: transform 0.3s cubic-bezier(.4,0,.2,1), opacity 0.25s; will-change: transform; overflow: hidden; }
-  .screen.hidden { transform: translateX(100%); opacity: 0; pointer-events: none; }
-  .screen.slide-left { transform: translateX(-40%); opacity: 0; pointer-events: none; }
+  .screen { position: fixed; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; display: flex; flex-direction: column; background: var(--bg); transition: transform 0.3s cubic-bezier(.4,0,.2,1), opacity 0.25s; will-change: transform; overflow: hidden; }
+  .screen.hidden { transform: translateX(calc(-50% + 100vw)); opacity: 0; pointer-events: none; }
+  .screen.slide-left { transform: translateX(calc(-50% - 40%)); opacity: 0; pointer-events: none; }
 
   /* ── TOPBAR ── */
   .topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--bg); }
@@ -82,7 +85,7 @@
   .stat-num.green { color: var(--green); }
   .stat-lbl { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3); margin-top: 4px; }
   .section-header { padding: 0 20px 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); }
-  .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 20px 24px; }
+  .menu-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0 20px 24px; }
   .menu-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 16px; cursor: pointer; transition: background 0.15s, border-color 0.15s; display: flex; flex-direction: column; gap: 10px; -webkit-tap-highlight-color: transparent; }
   .menu-card:active { background: var(--bg3); border-color: var(--border2); }
   .menu-card.accent-card { border-color: var(--accent-glow); background: var(--accent-dim); }
@@ -187,95 +190,6 @@
   .equip-info { flex: 1; min-width: 0; }
   .equip-name { font-size: 14px; font-weight: 700; }
   .equip-meta { font-size: 11px; font-family: var(--mono); color: var(--text3); margin-top: 3px; }
-
-
-
-  /* ── SCHEDULE ── */
-  .cal-wrap { padding: 16px 16px 0; }
-  .cal-toprow { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-  .cal-month-lbl { font-size:18px; font-weight:800; letter-spacing:-0.3px; }
-  .cal-navbtn { background:var(--bg3); border:1px solid var(--border); border-radius:8px; color:var(--text); width:36px; height:36px; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-  .cal-navbtn:active { opacity:0.7; }
-  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:6px; }
-  .cal-dow { text-align:center; font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text3); padding:4px 0 8px; }
-  .cal-day { aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:10px; cursor:pointer; position:relative; }
-  .cal-day:active { background:var(--bg3); }
-  .cal-day-num { font-size:14px; font-weight:600; color:var(--text); line-height:1; }
-  .cal-day.other .cal-day-num { color:var(--text3); }
-  .cal-day.today .cal-day-num { background:var(--accent); color:#fff; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; }
-  .cal-day.has-dot::after { content:''; width:5px; height:5px; border-radius:50%; background:var(--accent); position:absolute; bottom:3px; }
-  .cal-day.today.has-dot::after { background:#fff; }
-  .cal-day.sel { background:var(--bg3); border:1px solid var(--border2); }
-  .cal-divider { height:1px; background:var(--border); margin:14px 16px 0; }
-  .cal-day-section { padding:16px; }
-  .cal-day-lbl { font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text3); margin-bottom:12px; }
-  .resv-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; margin-bottom:8px; }
-  .resv-card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
-  .resv-name { font-size:14px; font-weight:700; flex:1; margin-right:8px; }
-  .resv-meta { font-size:12px; color:var(--text2); display:flex; gap:12px; flex-wrap:wrap; }
-  .resv-notes { font-size:12px; color:var(--text3); margin-top:5px; font-style:italic; }
-  .del-resv-btn { background:none; border:1px solid rgba(239,68,68,0.25); border-radius:8px; color:var(--red); padding:6px 9px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; }
-  .del-resv-btn svg { width:14px; height:14px; }
-  .del-resv-btn:active { opacity:0.7; }
-  .upcoming-row { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:13px 15px; margin-bottom:7px; display:flex; align-items:center; gap:12px; }
-  .upcom-date { background:var(--accent-dim); border:1px solid var(--accent-glow); border-radius:10px; padding:6px 10px; text-align:center; flex-shrink:0; min-width:44px; }
-  .upcom-date-d { font-size:18px; font-weight:800; color:var(--accent); line-height:1; }
-  .upcom-date-m { font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--accent); opacity:0.7; }
-  .upcom-info { flex:1; min-width:0; }
-  .upcom-item { font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .upcom-who { font-size:12px; color:var(--text2); margin-top:2px; }
-  .req-banner { background:var(--accent-dim); border:1px solid var(--accent-glow); border-radius:var(--radius); padding:16px; margin:16px 16px 0; }
-  .req-banner-title { font-size:13px; font-weight:700; color:var(--accent); margin-bottom:4px; }
-  .req-banner-sub { font-size:12px; color:var(--text2); line-height:1.5; }
-  .req-form { padding:16px; }
-  .req-empty { text-align:center; padding:24px; color:var(--text3); font-size:13px; }
-  .sched-badge-upcoming { background:var(--green-dim); color:var(--green); }
-  .sched-badge-past { background:var(--bg3); color:var(--text3); border:1px solid var(--border); }
-  .date-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
-  /* ── AUDIT ── */
-  .audit-status-bar { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .audit-progress-wrap { flex: 1; }
-  .audit-progress-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; display: flex; justify-content: space-between; }
-  .audit-progress-bar { height: 6px; background: var(--bg4); border-radius: 99px; overflow: hidden; }
-  .audit-progress-fill { height: 100%; background: var(--green); border-radius: 99px; transition: width 0.3s ease; }
-  .audit-scan-row { display: flex; gap: 8px; margin-bottom: 16px; }
-  .audit-scan-row input { flex: 1; }
-  .audit-item-row { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; transition: all 0.2s; }
-  .audit-item-row.scanned { border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.06); }
-  .audit-item-row.missing { border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.06); }
-  .audit-check { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--border2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-  .audit-item-row.scanned .audit-check { background: var(--green); border-color: var(--green); }
-  .audit-item-row.missing .audit-check { background: var(--red-dim); border-color: var(--red); }
-  .audit-check svg { width: 12px; height: 12px; display: none; }
-  .audit-item-row.scanned .audit-check svg { display: block; stroke: #fff; }
-  .audit-item-row.missing .audit-check svg { display: block; stroke: var(--red); }
-  .audit-item-info { flex: 1; min-width: 0; }
-  .audit-item-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .audit-item-bc { font-size: 11px; font-family: var(--mono); color: var(--text3); margin-top: 1px; }
-  .audit-history-row { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; cursor: pointer; }
-  .audit-history-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-  .audit-history-title { font-size: 14px; font-weight: 700; }
-  .audit-history-meta { font-size: 12px; color: var(--text2); display: flex; gap: 12px; }
-  .audit-filter-row { display: flex; gap: 7px; margin-bottom: 14px; }
-  .audit-filter-btn { font-family: var(--font); font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 99px; border: 1px solid var(--border); background: var(--bg3); color: var(--text2); cursor: pointer; transition: all 0.15s; }
-  .audit-filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-
-  /* ── MODAL / SHEET ── */
-  .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999; display: flex; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
-  .sheet-overlay.open { opacity: 1; pointer-events: all; }
-  .sheet { background: var(--bg2); border-radius: 24px 24px 0 0; padding: 20px 24px calc(32px + env(safe-area-inset-bottom)); width: 100%; transform: translateY(100%); transition: transform 0.3s cubic-bezier(.4,0,.2,1); }
-  .sheet-overlay.open .sheet { transform: translateY(0); }
-  .sheet-handle { width: 40px; height: 4px; background: var(--bg4); border-radius: 99px; margin: 0 auto 24px; }
-  .sheet-title { font-size: 18px; font-weight: 800; margin-bottom: 22px; letter-spacing: -0.3px; }
-  .sheet-err { font-size: 13px; color: var(--red); margin-bottom: 12px; min-height: 16px; }
-  .sheet-row { margin-bottom: 16px; }
-
-  /* ── TOAST ── */
-  .toast { position: fixed; bottom: calc(80px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%) translateY(16px); background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 12px 22px; border-radius: 12px; font-size: 13px; font-weight: 600; opacity: 0; transition: all 0.25s; pointer-events: none; z-index: 9999; white-space: nowrap; }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .toast.success { border-color: rgba(34,197,94,0.3); color: var(--green); }
-  .toast.error { border-color: rgba(239,68,68,0.3); color: var(--red); }
-
 
   /* ── AUDIT ── */
   .audit-status-bar { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -431,35 +345,18 @@
         <div class="menu-card-title">Scan & Check Out</div>
         <div class="menu-card-sub">Use camera or manual entry</div>
       </div>
-      <div class="menu-card admin-only" id="logs-menu-btn" style="display:none;" onclick="navTo('logs')">
+      <div class="menu-card" onclick="navTo('logs')">
         <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2.2" stroke-linecap="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M9 12l2 2 4-4"/></svg></div>
         <div class="menu-card-title">View Logs</div>
         <div class="menu-card-sub">Checkout history</div>
-      </div>
-
-        <div class="menu-card-title">Schedule</div>
-        <div class="menu-card-sub" id="sched-menu-sub">View calendar</div>
-      </div>
-
-        <div class="menu-card-title">Request</div>
-        <div class="menu-card-sub">Reserve equipment</div>
-      </div>
-      <div class="menu-card admin-only" id="sched-menu-btn" style="display:none;" onclick="navTo('schedule')">
-        <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-        <div class="menu-card-title">Schedule</div>
-        <div class="menu-card-sub">View & manage calendar</div>
-      </div>
-      <div class="menu-card" id="req-menu-btn" onclick="navTo('schedule')">
-        <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-        <div class="menu-card-title">Request</div>
-        <div class="menu-card-sub">Reserve equipment</div>
       </div>
       <div class="menu-card admin-only" id="admin-menu-btn" style="display:none;" onclick="navTo('admin')">
         <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2.2" stroke-linecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
         <div class="menu-card-title">Admin Panel</div>
         <div class="menu-card-sub">Users & inventory</div>
       </div>
-
+      <div class="menu-card" id="sched-menu-btn" onclick="navTo('schedule')">
+        <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
         <div class="menu-card-title">Schedule</div>
         <div class="menu-card-sub" id="sched-menu-sub">Request equipment</div>
       </div>
@@ -474,20 +371,18 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h.01M14 17h.01M17 14h.01M17 17h3M20 14v3"/></svg>
       <span class="nav-item-lbl">Scan</span>
     </div>
-    <div class="nav-item admin-only" id="logs-nav-item" style="display:none;" onclick="navTo('logs')">
+    <div class="nav-item" onclick="navTo('logs')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
       <span class="nav-item-lbl">Logs</span>
-    </div>
-
-    <div class="nav-item admin-only" id="sched-nav-item" style="display:none;" onclick="navTo('schedule')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      <span class="nav-item-lbl">Schedule</span>
     </div>
     <div class="nav-item admin-only" id="admin-nav-item" style="display:none;" onclick="navTo('admin')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/><path d="M19 11l2 2-5 5-2.5-2.5"/></svg>
       <span class="nav-item-lbl">Admin</span>
     </div>
-
+    <div class="nav-item" id="sched-nav-item" onclick="navTo('schedule')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span class="nav-item-lbl">Schedule</span>
+    </div>
   </div>
 </div>
 
@@ -535,8 +430,9 @@
         <div class="item-meta"><span class="badge badge-cat" id="ic-cat"></span></div>
         <div class="item-who" id="ic-who"></div>
         <button class="action-btn" id="ic-action-btn" onclick="doAction()"></button>
-        <button onclick="schedFromScan()" style="width:100%;margin-top:10px;padding:14px;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:var(--radius-sm);font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;">&#128197; Schedule This Item</button>
-
+        <button class="action-btn" id="ic-sched-btn" onclick="scheduleFromScan()" style="margin-top:10px;background:var(--bg3);color:var(--text);border:1px solid var(--border2);font-size:14px;">
+          <span style="margin-right:6px;">📅</span> Schedule This Item
+        </button>
       </div>
     </div>
   </div>
@@ -682,36 +578,7 @@
     </div>
   </div>
 
-
-<!-- ══ SHEET: Reservation ══ -->
-<div class="sheet-overlay" id="sheet-resv" onclick="if(event.target===this)closeSheet('sheet-resv')">
-  <div class="sheet" style="max-height:88vh;overflow-y:auto;">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title" id="resv-sheet-title">New Reservation</div>
-    <div style="margin-bottom:14px;">
-      <label class="field-label">Equipment Item</label>
-      <select id="nr-item" style="width:100%;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm);padding:13px 16px;font-family:var(--font);font-size:14px;outline:none;-webkit-appearance:none;"></select>
-    </div>
-    <div style="margin-bottom:14px;">
-      <label class="field-label">Assigned To</label>
-      <select id="nr-user" style="width:100%;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm);padding:13px 16px;font-family:var(--font);font-size:14px;outline:none;-webkit-appearance:none;"></select>
-    </div>
-    <div class="date-grid">
-      <div><label class="field-label">Start Date</label><input class="field-input" type="date" id="nr-start" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);color-scheme:dark;"></div>
-      <div><label class="field-label">End Date</label><input class="field-input" type="date" id="nr-end" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);color-scheme:dark;"></div>
-    </div>
-    <div style="margin-bottom:14px;">
-      <label class="field-label">Notes (optional)</label>
-      <input class="field-input" id="nr-notes" placeholder="e.g. Sports broadcast" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);">
-    </div>
-    <div id="nr-err" style="color:var(--red);font-size:13px;margin-bottom:12px;min-height:16px;"></div>
-    <button class="btn" onclick="saveResv()">Save Reservation</button>
-    <button class="btn" style="margin-top:10px;background:var(--bg3);color:var(--text2);border:1px solid var(--border);" onclick="closeSheet('sheet-resv')">Cancel</button>
-  </div>
-</div>
-
-
-<!-- ══ SCHEDULE ══ -->
+<!-- ════════════════════════════════════ SCHEDULE ════════════════════════════════════ -->
 <div class="screen hidden" id="screen-schedule">
   <div class="topbar">
     <div class="topbar-left">
@@ -720,17 +587,80 @@
         Back
       </button>
     </div>
-    <div class="topbar-title" id="sched-topbar-title">Schedule</div>
-    <button id="sched-plus-btn" style="display:none;background:none;border:none;color:var(--accent);font-size:26px;font-weight:300;cursor:pointer;padding:0 6px;line-height:1;" onclick="openResvSheet(null)">+</button>
-    <div id="sched-plus-gap" style="width:36px;"></div>
+    <div class="topbar-title" id="sched-title">Schedule</div>
+    <button id="sched-add-btn" onclick="openSheet('sheet-new-sched')" style="display:none;background:none;border:none;color:var(--accent);font-family:var(--font);font-size:26px;font-weight:300;cursor:pointer;padding:0 4px;line-height:1;">+</button>
+    <div id="sched-add-placeholder" style="width:32px;"></div>
   </div>
-  <div class="scroll-body" id="sched-content"></div>
+  <div class="scroll-body" id="sched-body">
+    <!-- filled dynamically by renderScheduleScreen() -->
+  </div>
 </div>
 
-<!-- ══ SHEET: New Reservation ══ -->
+<!-- ════════════════════════════════════ SHEET: New User ════════════════════════════════════ -->
+<div class="sheet-overlay" id="sheet-new-user" onclick="sheetOverlayClick(event,'sheet-new-user')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Create User Account</div>
+    <div class="sheet-row">
+      <label class="field-label">Full Name</label>
+      <input class="field-input" id="nu-name" placeholder="e.g. Jordan Smith" autocomplete="off">
+    </div>
+    <div class="sheet-row">
+      <label class="field-label">Username</label>
+      <input class="field-input" id="nu-user" placeholder="e.g. jordans" autocomplete="off" autocorrect="off" autocapitalize="none">
+    </div>
+    <div class="sheet-row">
+      <label class="field-label">Password</label>
+      <input class="field-input" type="password" id="nu-pass" placeholder="••••••••">
+    </div>
+    <div class="sheet-row">
+      <label class="field-label">Role</label>
+      <select class="field-select" id="nu-role">
+        <option value="student">Student</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <div class="sheet-err" id="nu-err"></div>
+    <button class="btn" onclick="createUser()">Create Account</button>
+    <button class="btn btn-ghost" style="margin-top:10px;" onclick="closeSheet('sheet-new-user')">Cancel</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════ SHEET: New Reservation ════════════════════════════════════ -->
+<div class="sheet-overlay" id="sheet-new-sched" onclick="sheetOverlayClick(event,'sheet-new-sched')">
+  <div class="sheet" style="max-height:90vh;overflow-y:auto;">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">New Reservation</div>
+    <div class="sheet-row">
+      <label class="field-label">Equipment Item</label>
+      <select class="field-select" id="ns-item" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm);width:100%;padding:13px 16px;font-family:var(--font);font-size:14px;outline:none;-webkit-appearance:none;margin-bottom:14px;"></select>
+    </div>
+    <div class="sheet-row">
+      <label class="field-label">Assigned To</label>
+      <select class="field-select" id="ns-user" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm);width:100%;padding:13px 16px;font-family:var(--font);font-size:14px;outline:none;-webkit-appearance:none;margin-bottom:14px;"></select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div>
+        <label class="field-label">Start Date</label>
+        <input class="field-input" type="date" id="ns-start" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);color-scheme:dark;">
+      </div>
+      <div>
+        <label class="field-label">End Date</label>
+        <input class="field-input" type="date" id="ns-end" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);color-scheme:dark;">
+      </div>
+    </div>
+    <div class="sheet-row">
+      <label class="field-label">Notes (optional)</label>
+      <input class="field-input" id="ns-notes" placeholder="e.g. Sports broadcast, 3pm pickup" autocomplete="off" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);">
+    </div>
+    <div class="sheet-err" id="ns-err"></div>
+    <button class="btn" onclick="createReservation()">Save Reservation</button>
+    <button class="btn btn-ghost" style="margin-top:10px;" onclick="closeSheet('sheet-new-sched')">Cancel</button>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
 <script>
 // ── FIREBASE INIT ──
 let fdb, COL;
@@ -915,14 +845,17 @@ function navTo(name) {
   if (name === 'scanner') { currentItem = null; document.getElementById('item-card').classList.remove('visible'); document.getElementById('bc-input').value = ''; }
   if (name === 'schedule') {
     const isAdmin = !!(currentUser && currentUser.role === 'admin');
-    document.getElementById('sched-plus-btn').style.display = isAdmin ? '' : 'none';
-    document.getElementById('sched-plus-gap').style.display = isAdmin ? 'none' : '';
-    document.getElementById('sched-topbar-title').textContent = isAdmin ? 'Schedule' : 'Request Equipment';
-    const preId = _pendingSchedItem; _pendingSchedItem = null;
-    if (isAdmin) { _calY = new Date().getFullYear(); _calM = new Date().getMonth(); _calSel = null; drawAdminSched(); }
-    else { drawStudentSched(preId); }
+    document.getElementById('sched-add-btn').style.display = isAdmin ? '' : 'none';
+    document.getElementById('sched-add-placeholder').style.display = isAdmin ? 'none' : '';
+    if (isAdmin) {
+      calYear = new Date().getFullYear(); calMonth = new Date().getMonth(); calSelectedDate = null;
+      renderScheduleAdmin();
+    } else {
+      const preId = pendingSchedItemId;
+      pendingSchedItemId = null;
+      renderScheduleStudent(preId);
+    }
   }
-
 }
 
 // ── HOME ──
@@ -1145,6 +1078,7 @@ function renderAdminAllLogs() {
 // ── USER MGMT ──
 function openSheet(id, preSelectItemId) {
   document.getElementById(id).classList.add('open');
+  if (id === 'sheet-new-sched') populateSchedSheet(preSelectItemId);
 }
 function closeSheet(id) { document.getElementById(id).classList.remove('open'); }
 function sheetOverlayClick(e, id) { if (e.target === e.currentTarget) closeSheet(id); }
@@ -1205,241 +1139,557 @@ async function deleteEquip(id) {
   toast('Equipment removed');
 }
 
-// ══════════════ SCHEDULE ══════════════
-let _calY = new Date().getFullYear();
-let _calM = new Date().getMonth();
-let _calSel = null;
-let _pendingSchedItem = null;
-const _MN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const _SM = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+// ── CALENDAR ──
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let calSelectedDate = null;
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-function _dk(y,m,d){ return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
-function _pd(k){ const[y,m,d]=k.split('-').map(Number); return{y,m:m-1,d}; }
-function _rDates(r){
-  const out=[],s=new Date(r.startDate+'T00:00:00'),e=new Date(r.endDate+'T00:00:00');
-  for(let d=new Date(s);d<=e;d.setDate(d.getDate()+1))
-    out.push(_dk(d.getFullYear(),d.getMonth(),d.getDate()));
-  return out;
-}
+function dateKey(y, m, d) { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+function parseDateKey(k) { const [y,m,d] = k.split('-').map(Number); return { y, m: m-1, d }; }
 
-function drawAdminSched(){
-  const el=document.getElementById('sched-content');
-  if(!el)return;
-  const now=new Date();
-  const fd=new Date(_calY,_calM,1).getDay();
-  const dim=new Date(_calY,_calM+1,0).getDate();
-  const dip=new Date(_calY,_calM,0).getDate();
-  const booked=new Set();
-  (db.reservations||[]).forEach(r=>_rDates(r).forEach(dk=>{
-    const p=_pd(dk);if(p.y===_calY&&p.m===_calM)booked.add(p.d);
-  }));
-  const total=Math.ceil((fd+dim)/7)*7;
-  let cells='';
-  for(let i=0;i<total;i++){
-    let day,mo,yr,other=false;
-    if(i<fd){day=dip-fd+i+1;mo=_calM-1;yr=_calY;if(mo<0){mo=11;yr--;}other=true;}
-    else if(i>=fd+dim){day=i-fd-dim+1;mo=_calM+1;yr=_calY;if(mo>11){mo=0;yr++;}other=true;}
-    else{day=i-fd+1;mo=_calM;yr=_calY;}
-    const isT=!other&&day===now.getDate()&&_calM===now.getMonth()&&_calY===now.getFullYear();
-    const dot=!other&&booked.has(day);
-    const dk=_dk(yr,mo,day);
-    const sel=_calSel===dk;
-    const cls='cal-day'+(other?' other':'')+(isT?' today':'')+(dot?' has-dot':'')+(sel?' sel':'');
-    cells+=`<div class="${cls}" onclick="calClick('${dk}')"><span class="cal-day-num">${day}</span></div>`;
+function reservationDates(r) {
+  const dates = [];
+  const start = new Date(r.startDate + 'T00:00:00');
+  const end = new Date(r.endDate + 'T00:00:00');
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate()+1)) {
+    dates.push(dateKey(d.getFullYear(), d.getMonth(), d.getDate()));
   }
+  return dates;
+}
 
-  let daySec='';
-  if(_calSel){
-    const{y,m,d}=_pd(_calSel);
-    const lbl=new Date(y,m,d).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-    const evts=(db.reservations||[]).filter(r=>_rDates(r).includes(_calSel));
-    const evtHtml=evts.length===0
-      ?'<div class="req-empty">Nothing scheduled this day.</div>'
-      :evts.map(r=>{
-          const itm=db.equipment.find(e=>e.id===r.itemId);
-          const usr=db.users.find(u=>u.id===r.userId);
-          const sf=new Date(r.startDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
-          const ef=new Date(r.endDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
-          const sp=r.startDate===r.endDate?sf:sf+' – '+ef;
-          return '<div class="resv-card"><div class="resv-card-top"><div class="resv-name">'+(itm?itm.name:r.itemName)+'</div>'
-            +'<button class="del-resv-btn" onclick=\"delResv('+r.id+')\">'
-            +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">'
-            +'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>'
-            +'<div class="resv-meta"><span>'+(usr?usr.name:'Unknown')+'</span><span>'+sp+'</span></div>'
-            +(r.notes?'<div class="resv-notes">'+r.notes+'</div>':'')
-            +'</div>';
-        }).join('');
-    daySec='<div class="cal-divider"></div><div class="cal-day-section"><div class="cal-day-lbl">'+lbl+'</div>'+evtHtml+'</div>';
+function renderCalendar() {
+  document.getElementById('cal-month-label').textContent = `${MONTH_NAMES[calMonth]} ${calYear}`;
+  const bookedDays = new Set();
+  (db.reservations || []).forEach(r => {
+    reservationDates(r).forEach(dk => {
+      const p = parseDateKey(dk);
+      if (p.y === calYear && p.m === calMonth) bookedDays.add(p.d);
+    });
+  });
+  const today = new Date();
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+  let html = '';
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+  for (let i = 0; i < totalCells; i++) {
+    let day, month, year, isOther = false;
+    if (i < firstDay) { day = daysInPrev - firstDay + i + 1; month = calMonth - 1; year = calYear; if (month < 0) { month = 11; year--; } isOther = true; }
+    else if (i >= firstDay + daysInMonth) { day = i - firstDay - daysInMonth + 1; month = calMonth + 1; year = calYear; if (month > 11) { month = 0; year++; } isOther = true; }
+    else { day = i - firstDay + 1; month = calMonth; year = calYear; }
+    const isToday = !isOther && day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
+    const hasEvents = !isOther && bookedDays.has(day);
+    const dk = dateKey(year, month, day);
+    const isSelected = calSelectedDate === dk;
+    const classes = ['cal-day', isOther?'other-month':'', isToday?'today':'', hasEvents?'has-events':'', isSelected?'selected':''].filter(Boolean).join(' ');
+    html += `<div class="${classes}" onclick="selectCalDay('${dk}')"><span class="cal-day-num">${day}</span></div>`;
   }
-
-  const todayStr=_dk(now.getFullYear(),now.getMonth(),now.getDate());
-  const upcoming=(db.reservations||[]).filter(r=>r.endDate>=todayStr).sort((a,b)=>a.startDate.localeCompare(b.startDate)).slice(0,10);
-  const upHtml=upcoming.length===0
-    ?'<div class="req-empty">No upcoming reservations.</div>'
-    :upcoming.map(r=>{
-        const itm=db.equipment.find(e=>e.id===r.itemId);
-        const usr=db.users.find(u=>u.id===r.userId);
-        const d=new Date(r.startDate+'T00:00:00');
-        return '<div class="upcoming-row">'
-          +'<div class="upcom-date"><div class="upcom-date-d">'+d.getDate()+'</div><div class="upcom-date-m">'+_SM[d.getMonth()]+'</div></div>'
-          +'<div class="upcom-info"><div class="upcom-item">'+(itm?itm.name:r.itemName)+'</div>'
-          +'<div class="upcom-who">'+(usr?usr.name:'Unknown')+(r.notes?' · '+r.notes:'')+'</div></div>'
-          +'<button class="del-resv-btn" onclick=\"delResv('+r.id+')\">'
-          +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">'
-          +'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>';
-      }).join('');
-
-  el.innerHTML=
-    '<div class="cal-wrap">'
-      +'<div class="cal-toprow">'
-        +'<div class="cal-month-lbl">'+_MN[_calM]+' '+_calY+'</div>'
-        +'<div style="display:flex;gap:6px;">'
-          +'<button class="cal-navbtn" onclick="calNav(-1)">&#8249;</button>'
-          +'<button class="cal-navbtn" onclick="calNav(1)">&#8250;</button>'
-        +'</div>'
-      +'</div>'
-      +'<div class="cal-grid">'
-        +'<div class="cal-dow">Su</div><div class="cal-dow">Mo</div><div class="cal-dow">Tu</div>'
-        +'<div class="cal-dow">We</div><div class="cal-dow">Th</div><div class="cal-dow">Fr</div><div class="cal-dow">Sa</div>'
-        +cells
-      +'</div>'
-    +'</div>'
-    +daySec
-    +'<div style="padding:16px;">'
-      +'<div class="section-header" style="padding:0 0 12px;">Upcoming Reservations</div>'
-      +upHtml
-    +'</div>';
+  document.getElementById('cal-cells').outerHTML = `<div id="cal-cells" style="display:contents;">${html}</div>`;
+  if (calSelectedDate) renderDayEvents(calSelectedDate);
+  renderUpcoming();
 }
 
-function calClick(dk){ _calSel=(_calSel===dk)?null:dk; drawAdminSched(); }
-function calNav(dir){
-  _calM+=dir;
-  if(_calM>11){_calM=0;_calY++;}
-  if(_calM<0){_calM=11;_calY--;}
-  _calSel=null;
-  drawAdminSched();
+function selectCalDay(dk) {
+  calSelectedDate = dk;
+  renderCalendar();
+  const { y, m, d } = parseDateKey(dk);
+  document.getElementById('cal-selected-label').textContent = new Date(y, m, d).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
+  renderDayEvents(dk);
+  document.querySelector('.cal-day-detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function drawStudentSched(preItemId){
-  const el=document.getElementById('sched-content');
-  if(!el)return;
-  const today=new Date().toISOString().split('T')[0];
-  const opts=db.equipment
-    .filter(e=>!e.status||e.status==='In Stock'||e.status==='Signed Out')
-    .map(e=>'<option value="'+e.id+'"'+(preItemId===e.id?' selected':'')+'>'+e.name+' ('+e.barcode+')</option>')
-    .join('');
-  const mine=(db.reservations||[]).filter(r=>r.userId===currentUser.id).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
-  const mineHtml=mine.length===0
-    ?'<div class="req-empty">No requests yet.</div>'
-    :mine.map(r=>{
-        const itm=db.equipment.find(e=>e.id===r.itemId);
-        const sf=new Date(r.startDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
-        const ef=new Date(r.endDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
-        const sp=r.startDate===r.endDate?sf:sf+' – '+ef;
-        const past=r.endDate<today;
-        return '<div class="resv-card" style="'+(past?'opacity:0.5;':'')+'">'
-          +'<div class="resv-card-top"><div class="resv-name">'+(itm?itm.name:r.itemName)+'</div>'
-          +'<span class="badge '+(past?'sched-badge-past':'sched-badge-upcoming')+'" style="font-size:10px;">'+(past?'Past':'Upcoming')+'</span></div>'
-          +'<div class="resv-meta"><span>'+sp+'</span></div>'
-          +(r.notes?'<div class="resv-notes">'+r.notes+'</div>':'')
-          +'</div>';
-      }).join('');
-  el.innerHTML=
-    '<div class="req-banner"><div class="req-banner-title">Reserve Equipment</div>'
-    +'<div class="req-banner-sub">Submit a request below. An admin will confirm your reservation.</div></div>'
-    +'<div class="req-form">'
-      +'<label class="field-label">Equipment Item</label>'
-      +'<select id="sr-item" style="width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm);padding:13px 16px;font-family:var(--font);font-size:14px;outline:none;-webkit-appearance:none;margin-bottom:14px;">'+opts+'</select>'
-      +'<div class="date-grid">'
-        +'<div><label class="field-label">Start Date</label><input class="field-input" type="date" id="sr-start" value="'+today+'" style="background:var(--bg2);color:var(--text);border:1px solid var(--border);color-scheme:dark;"></div>'
-        +'<div><label class="field-label">End Date</label><input class="field-input" type="date" id="sr-end" value="'+today+'" style="background:var(--bg2);color:var(--text);border:1px solid var(--border);color-scheme:dark;"></div>'
-      +'</div>'
-      +'<label class="field-label">Notes (optional)</label>'
-      +'<input class="field-input" id="sr-notes" placeholder="e.g. Sports broadcast, need by 3pm" style="background:var(--bg2);color:var(--text);border:1px solid var(--border);margin-bottom:14px;">'
-      +'<div id="sr-err" style="color:var(--red);font-size:13px;margin-bottom:10px;min-height:16px;"></div>'
-      +'<button class="btn" onclick="submitRequest()">Submit Request</button>'
-    +'</div>'
-    +'<div style="padding:0 16px 32px;">'
-      +'<div class="section-header" style="padding:0 0 12px;">My Requests</div>'
-      +mineHtml
-    +'</div>';
+function renderDayEvents(dk) {
+  const events = (db.reservations || []).filter(r => reservationDates(r).includes(dk));
+  const el = document.getElementById('cal-day-events');
+  if (events.length === 0) { el.innerHTML = '<div class="sched-empty">Nothing scheduled this day.</div>'; return; }
+  el.innerHTML = events.map(r => {
+    const item = db.equipment.find(e => e.id === r.itemId);
+    const user = db.users.find(u => u.id === r.userId);
+    const startFmt = new Date(r.startDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const endFmt = new Date(r.endDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const span = r.startDate === r.endDate ? startFmt : `${startFmt} – ${endFmt}`;
+    return `<div class="sched-card">
+      <div class="sched-card-top">
+        <div class="sched-item-name">${item ? item.name : r.itemName}</div>
+        <button class="del-sched-btn" onclick="deleteReservation('${r.id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        </button>
+      </div>
+      <div class="sched-meta">
+        <div class="sched-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>${user ? user.name : 'Unknown'}</div>
+        <div class="sched-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${span}</div>
+      </div>
+      ${r.notes ? `<div class="sched-notes">${r.notes}</div>` : ''}
+    </div>`;
+  }).join('');
 }
 
-function openResvSheet(preItemId){
-  const is=document.getElementById('nr-item');
-  const us=document.getElementById('nr-user');
-  is.innerHTML=db.equipment.map(e=>'<option value="'+e.id+'">'+e.name+' ('+e.barcode+')</option>').join('');
-  us.innerHTML=db.users.map(u=>'<option value="'+u.id+'">'+u.name+' (@'+u.username+')</option>').join('');
-  if(preItemId)is.value=preItemId;
-  if(currentUser)us.value=currentUser.id;
-  const today=new Date().toISOString().split('T')[0];
-  document.getElementById('nr-start').value=today;
-  document.getElementById('nr-end').value=today;
-  document.getElementById('nr-notes').value='';
-  document.getElementById('nr-err').textContent='';
-  openSheet('sheet-resv');
+function renderUpcoming() {
+  const todayStr = dateKey(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+  const upcoming = (db.reservations || []).filter(r => r.endDate >= todayStr).sort((a,b) => a.startDate.localeCompare(b.startDate)).slice(0,10);
+  const el = document.getElementById('upcoming-list');
+  if (upcoming.length === 0) { el.innerHTML = '<div class="sched-empty">No upcoming reservations.</div>'; return; }
+  el.innerHTML = upcoming.map(r => {
+    const item = db.equipment.find(e => e.id === r.itemId);
+    const user = db.users.find(u => u.id === r.userId);
+    const d = new Date(r.startDate + 'T00:00:00');
+    return `<div class="upcoming-row">
+      <div class="upcoming-date-box"><div class="upcoming-date-day">${d.getDate()}</div><div class="upcoming-date-mon">${SHORT_MONTHS[d.getMonth()]}</div></div>
+      <div class="upcoming-info">
+        <div class="upcoming-item">${item ? item.name : r.itemName}</div>
+        <div class="upcoming-who">${user ? user.name : 'Unknown'}${r.notes ? ' · ' + r.notes : ''}</div>
+      </div>
+      <button class="del-sched-btn" onclick="deleteReservation('${r.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+    </div>`;
+  }).join('');
 }
 
-async function saveResv(){
-  const itemId=document.getElementById('nr-item').value;
-  const userId=document.getElementById('nr-user').value;
-  const startDate=document.getElementById('nr-start').value;
-  const endDate=document.getElementById('nr-end').value;
-  const notes=document.getElementById('nr-notes').value.trim();
-  const err=document.getElementById('nr-err');
-  if(!startDate||!endDate){err.textContent='Please fill in both dates.';return;}
-  if(endDate<startDate){err.textContent='End date must be on or after start date.';return;}
-  const itm=db.equipment.find(e=>e.id===itemId);
-  const id=nextId();
-  const resv={itemId,itemName:itm?itm.name:'',userId,startDate,endDate,notes,createdAt:new Date().toISOString()};
+function calShift(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  calSelectedDate = null;
+  document.getElementById('cal-selected-label').textContent = 'Select a day to view reservations';
+  document.getElementById('cal-day-events').innerHTML = '';
+  renderCalendar();
+}
+
+function populateSchedSheet(preSelectItemId) {
+  const itemSel = document.getElementById('ns-item');
+  const userSel = document.getElementById('ns-user');
+  itemSel.innerHTML = db.equipment.map(e => `<option value="${e.id}">${e.name} (${e.barcode})</option>`).join('');
+  userSel.innerHTML = db.users.map(u => `<option value="${u.id}">${u.name} (@${u.username})</option>`).join('');
+  if (preSelectItemId) itemSel.value = preSelectItemId;
+  // Pre-select current user
+  if (currentUser) userSel.value = currentUser.id;
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('ns-start').value = today;
+  document.getElementById('ns-end').value = today;
+}
+
+async function createReservation() {
+  const itemId = document.getElementById('ns-item').value;
+  const userId = document.getElementById('ns-user').value;
+  const startDate = document.getElementById('ns-start').value;
+  const endDate = document.getElementById('ns-end').value;
+  const notes = document.getElementById('ns-notes').value.trim();
+  const errEl = document.getElementById('ns-err');
+  if (!itemId || !userId || !startDate || !endDate) { errEl.textContent = 'All fields are required.'; return; }
+  if (endDate < startDate) { errEl.textContent = 'End date must be after start date.'; return; }
+  const item = db.equipment.find(e => e.id === itemId);
+  const id = nextId();
+  const resv = { itemId, itemName: item ? item.name : '', userId, startDate, endDate, notes, createdAt: new Date().toISOString() };
   await COL.reservations.doc(id).set(resv);
-  db.reservations.push({id,...resv});
-  closeSheet('sheet-resv');
-  drawAdminSched();
-  toast('Reservation saved ✓','success');
+  db.reservations.push({ id, ...resv });
+  errEl.textContent = '';
+  document.getElementById('ns-notes').value = '';
+  closeSheet('sheet-new-sched');
+  renderCalendar();
+  toast('Reservation saved ✓', 'success');
 }
 
-async function submitRequest(){
-  const itemId=document.getElementById('sr-item').value;
-  const startDate=document.getElementById('sr-start').value;
-  const endDate=document.getElementById('sr-end').value;
-  const notes=document.getElementById('sr-notes').value.trim();
-  const err=document.getElementById('sr-err');
-  if(!startDate||!endDate){err.textContent='Please fill in both dates.';return;}
-  if(endDate<startDate){err.textContent='End date must be on or after start date.';return;}
-  const itm=db.equipment.find(e=>e.id===itemId);
-  const id=nextId();
-  const resv={itemId,itemName:itm?itm.name:'',userId:currentUser.id,userName:currentUser.name,startDate,endDate,notes,createdAt:new Date().toISOString()};
-  await COL.reservations.doc(id).set(resv);
-  db.reservations.push({id,...resv});
-  toast('Request submitted ✓','success');
-  drawStudentSched(null);
-}
-
-async function delResv(id){
-  if(!confirm('Delete this reservation?'))return;
+async function deleteReservation(id) {
+  if (!confirm('Delete this reservation?')) return;
   await COL.reservations.doc(id).delete();
-  db.reservations=(db.reservations||[]).filter(r=>r.id!==id);
-  drawAdminSched();
-  toast('Deleted');
+  db.reservations = db.reservations.filter(r => r.id !== id);
+  if (calSelectedDate) renderDayEvents(calSelectedDate);
+  renderCalendar();
+  toast('Reservation deleted');
 }
 
-function schedFromScan(){
-  if(!currentItem)return;
-  _pendingSchedItem=currentItem.id;
-  if(!!(currentUser&&currentUser.role==='admin')){
-    openResvSheet(_pendingSchedItem);
-    _pendingSchedItem=null;
+// ── SCHEDULE RENDERERS ──
+function renderScheduleAdmin() {
+  document.getElementById('sched-body').innerHTML = `
+    <div class="cal-header">
+      <div class="cal-month" id="cal-month-label"></div>
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="calShift(-1)">&#8249;</button>
+        <button class="cal-nav-btn" onclick="calShift(1)">&#8250;</button>
+      </div>
+    </div>
+    <div class="cal-grid">
+      <div class="cal-dow">Su</div><div class="cal-dow">Mo</div><div class="cal-dow">Tu</div>
+      <div class="cal-dow">We</div><div class="cal-dow">Th</div><div class="cal-dow">Fr</div><div class="cal-dow">Sa</div>
+      <div id="cal-cells"></div>
+    </div>
+    <div class="cal-divider"></div>
+    <div class="cal-day-detail">
+      <div class="cal-day-title" id="cal-selected-label">Select a day to view reservations</div>
+      <div id="cal-day-events"></div>
+    </div>
+    <div class="upcoming-section">
+      <div class="section-header" style="padding:0 0 12px;">All Upcoming Reservations</div>
+      <div id="upcoming-list"></div>
+    </div>`;
+  renderCalendar();
+}
+
+function renderScheduleStudent(preSelectItemId) {
+  const today = new Date().toISOString().split('T')[0];
+  const itemOptions = db.equipment
+    .filter(e => !e.status || e.status === 'In Stock' || e.status === 'Signed Out')
+    .map(e => `<option value="${e.id}"${preSelectItemId === e.id ? ' selected' : ''}>${e.name} (${e.barcode})</option>`)
+    .join('');
+
+  const mine = (db.reservations || [])
+    .filter(r => r.userId === currentUser.id)
+    .sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+
+  const myRequestsHtml = mine.length === 0
+    ? '<div class="sched-empty">You have no requests yet.</div>'
+    : mine.map(r => {
+        const item = db.equipment.find(e => e.id === r.itemId);
+        const startFmt = new Date(r.startDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+        const endFmt = new Date(r.endDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+        const span = r.startDate === r.endDate ? startFmt : `${startFmt} \u2013 ${endFmt}`;
+        const isPast = r.endDate < today;
+        return `<div class="sched-card" style="${isPast?'opacity:0.5;':''}">
+          <div class="sched-card-top">
+            <div class="sched-item-name">${item ? item.name : r.itemName}</div>
+            <span class="badge ${isPast?'badge-cat':'badge-available'}" style="font-size:10px;">${isPast?'Past':'Upcoming'}</span>
+          </div>
+          <div class="sched-meta"><div class="sched-meta-item">${span}</div></div>
+          ${r.notes ? `<div class="sched-notes">${r.notes}</div>` : ''}
+        </div>`;
+      }).join('');
+
+  document.getElementById('sched-body').innerHTML = `
+    <div style="padding:20px;">
+      <div style="background:var(--accent-dim);border:1px solid var(--accent-glow);border-radius:var(--radius);padding:16px;margin-bottom:24px;">
+        <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px;">Equipment Request</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.5;">Fill out the form below to reserve equipment. An admin will review your request.</div>
+      </div>
+      <div class="form-row" style="margin-bottom:16px;">
+        <label class="field-label">Equipment Item</label>
+        <select class="field-select" id="sr-item" style="background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm);width:100%;padding:13px 16px;font-family:var(--font);font-size:14px;outline:none;-webkit-appearance:none;">${itemOptions}</select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div>
+          <label class="field-label">Start Date</label>
+          <input class="field-input" type="date" id="sr-start" value="${today}" style="background:var(--bg2);color:var(--text);border:1px solid var(--border);color-scheme:dark;">
+        </div>
+        <div>
+          <label class="field-label">End Date</label>
+          <input class="field-input" type="date" id="sr-end" value="${today}" style="background:var(--bg2);color:var(--text);border:1px solid var(--border);color-scheme:dark;">
+        </div>
+      </div>
+      <div class="form-row" style="margin-bottom:20px;">
+        <label class="field-label">Notes (optional)</label>
+        <input class="field-input" id="sr-notes" placeholder="e.g. Sports broadcast, need by 3pm" autocomplete="off" style="background:var(--bg2);color:var(--text);border:1px solid var(--border);">
+      </div>
+      <div id="sr-err" style="color:var(--red);font-size:13px;margin-bottom:12px;min-height:16px;"></div>
+      <button class="btn" onclick="submitStudentRequest()">Submit Request</button>
+      <div style="margin-top:32px;">
+        <div class="section-header" style="padding:0 0 12px;">My Requests</div>
+        <div id="my-requests-list">${myRequestsHtml}</div>
+      </div>
+    </div>`;
+}
+
+function renderMyRequests() {
+  const el = document.getElementById('my-requests-list');
+  if (!el) return;
+  const today = new Date().toISOString().split('T')[0];
+  const mine = (db.reservations || []).filter(r => r.userId === currentUser.id).sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+  if (mine.length === 0) { el.innerHTML = '<div class="sched-empty">You have no requests yet.</div>'; return; }
+  el.innerHTML = mine.map(r => {
+    const item = db.equipment.find(e => e.id === r.itemId);
+    const startFmt = new Date(r.startDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const endFmt = new Date(r.endDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const span = r.startDate === r.endDate ? startFmt : `${startFmt} \u2013 ${endFmt}`;
+    const isPast = r.endDate < today;
+    return `<div class="sched-card" style="${isPast?'opacity:0.5;':''}">
+      <div class="sched-card-top">
+        <div class="sched-item-name">${item ? item.name : r.itemName}</div>
+        <span class="badge ${isPast?'badge-cat':'badge-available'}" style="font-size:10px;">${isPast?'Past':'Upcoming'}</span>
+      </div>
+      <div class="sched-meta"><div class="sched-meta-item">${span}</div></div>
+      ${r.notes ? `<div class="sched-notes">${r.notes}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── STUDENT SCHEDULE ──
+let pendingSchedItemId = null;
+
+function scheduleFromScan() {
+  if (!currentItem) return;
+  if (currentUser.role === 'admin') {
+    openSheet('sheet-new-sched', currentItem.id);
   } else {
+    pendingSchedItemId = currentItem.id;
     navTo('schedule');
   }
 }
-// ══════════════ END SCHEDULE ══════════════
+
+async function submitStudentRequest() {
+  const itemId = document.getElementById('sr-item').value;
+  const startDate = document.getElementById('sr-start').value;
+  const endDate = document.getElementById('sr-end').value;
+  const notes = document.getElementById('sr-notes').value.trim();
+  const errEl = document.getElementById('sr-err');
+  if (!itemId || !startDate || !endDate) { errEl.textContent = 'Please fill in all required fields.'; return; }
+  if (endDate < startDate) { errEl.textContent = 'End date must be on or after start date.'; return; }
+  const item = db.equipment.find(e => e.id === itemId);
+  const id = nextId();
+  const resv = { itemId, itemName: item ? item.name : '', userId: currentUser.id, userName: currentUser.name, startDate, endDate, notes, createdAt: new Date().toISOString() };
+  await COL.reservations.doc(id).set(resv);
+  db.reservations.push({ id, ...resv });
+  errEl.textContent = '';
+  document.getElementById('sr-notes').value = '';
+  renderMyRequests();
+  toast('Request submitted ✓', 'success');
+}
+
+
+// ── CAPS LOCK ──
+function checkCapsLock(e) {
+  const warn = document.getElementById('caps-warning');
+  if (e.getModifierState) {
+    warn.style.display = e.getModifierState('CapsLock') ? 'block' : 'none';
+  }
+}
+
+// ── AUDIT ──
+let activeAudit = null; // { label, startedAt, scanned: Set of barcodes }
+let auditFilter = 'all';
+
+function adminTab(name, el) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  if (name === 'audit') renderAuditHistory();
+}
+
+function startAudit() {
+  const label = document.getElementById('audit-label-input').value.trim() || `Audit ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+  activeAudit = { label, startedAt: new Date().toISOString(), scanned: new Set() };
+  auditFilter = 'all';
+  document.getElementById('audit-idle-view').style.display = 'none';
+  document.getElementById('audit-active-view').style.display = 'block';
+  document.getElementById('audit-report-view').style.display = 'none';
+  renderAuditItems();
+  updateAuditProgress();
+  setTimeout(() => document.getElementById('audit-bc-input').focus(), 100);
+}
+
+function cancelAudit() {
+  if (!confirm('Cancel this audit? Progress will be lost.')) return;
+  activeAudit = null;
+  showAuditIdle();
+}
+
+async function finalizeAudit() {
+  if (!activeAudit) return;
+  const total = db.equipment.length;
+  const scannedArr = [...activeAudit.scanned];
+  const missingItems = db.equipment.filter(e => !activeAudit.scanned.has(e.barcode));
+  const auditDoc = {
+    label: activeAudit.label,
+    startedAt: activeAudit.startedAt,
+    finalizedAt: new Date().toISOString(),
+    totalItems: total,
+    scannedCount: scannedArr.length,
+    missingCount: missingItems.length,
+    scannedBarcodes: scannedArr,
+    missingItems: missingItems.map(e => ({ id: e.id, name: e.name, barcode: e.barcode, category: e.category, location: e.location || '' }))
+  };
+  const id = nextId();
+  await COL.meta.doc('audit_' + id).set(auditDoc);
+  if (!db.audits) db.audits = [];
+  db.audits.unshift({ id, ...auditDoc });
+  toast(`Audit finalized — ${missingItems.length} item${missingItems.length !== 1 ? 's' : ''} missing`, missingItems.length === 0 ? 'success' : '');
+  activeAudit = null;
+  showAuditIdle();
+  viewAuditReport({ id, ...auditDoc });
+}
+
+function showAuditIdle() {
+  activeAudit = null;
+  document.getElementById('audit-idle-view').style.display = 'block';
+  document.getElementById('audit-active-view').style.display = 'none';
+  document.getElementById('audit-report-view').style.display = 'none';
+  renderAuditHistory();
+}
+
+async function renderAuditHistory() {
+  // Load from Firestore if not cached
+  if (!db.audits) {
+    const snap = await COL.meta.where('totalItems', '>', 0).get().catch(() => null);
+    if (snap) {
+      db.audits = snap.docs
+        .filter(d => d.id.startsWith('audit_'))
+        .map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => b.finalizedAt?.localeCompare(a.finalizedAt));
+    } else { db.audits = []; }
+  }
+  const el = document.getElementById('audit-history-list');
+  if (!db.audits || db.audits.length === 0) {
+    el.innerHTML = '<div class="empty" style="padding:24px 0;">No audits completed yet.</div>';
+    return;
+  }
+  el.innerHTML = db.audits.map(a => {
+    const date = new Date(a.finalizedAt || a.startedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const pct = Math.round((a.scannedCount / a.totalItems) * 100);
+    return `<div class="audit-history-row" onclick="viewAuditReport(${JSON.stringify(a).replace(/"/g,'&quot;')})">
+      <div class="audit-history-top">
+        <div class="audit-history-title">${a.label}</div>
+        <span class="badge ${a.missingCount === 0 ? 'badge-available' : 'badge-out'}">${a.missingCount === 0 ? 'Full' : `${a.missingCount} missing`}</span>
+      </div>
+      <div class="audit-history-meta">
+        <span>${date}</span>
+        <span>${a.scannedCount}/${a.totalItems} scanned (${pct}%)</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function viewAuditReport(audit) {
+  document.getElementById('audit-idle-view').style.display = 'none';
+  document.getElementById('audit-active-view').style.display = 'none';
+  document.getElementById('audit-report-view').style.display = 'block';
+  const date = new Date(audit.finalizedAt || audit.startedAt).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const pct = Math.round((audit.scannedCount / audit.totalItems) * 100);
+  const missing = audit.missingItems || [];
+  const el = document.getElementById('audit-report-content');
+  el.innerHTML = `
+    <div style="margin-bottom:20px;">
+      <div style="font-size:20px;font-weight:800;letter-spacing:-0.3px;margin-bottom:4px;">${audit.label}</div>
+      <div style="font-size:12px;color:var(--text2);">${date}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:24px;">
+      <div class="stat-card"><div class="stat-num accent">${audit.totalItems}</div><div class="stat-lbl">Total</div></div>
+      <div class="stat-card"><div class="stat-num green">${audit.scannedCount}</div><div class="stat-lbl">Scanned</div></div>
+      <div class="stat-card"><div class="stat-num ${audit.missingCount > 0 ? 'amber' : 'green'}">${audit.missingCount}</div><div class="stat-lbl">Missing</div></div>
+    </div>
+    <div style="margin-bottom:8px;">
+      <div class="audit-progress-label"><span style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);">Coverage</span><span style="font-weight:700;color:var(--green);">${pct}%</span></div>
+      <div class="audit-progress-bar"><div class="audit-progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    ${missing.length === 0
+      ? `<div style="background:var(--green-dim);border:1px solid rgba(34,197,94,0.25);border-radius:var(--radius);padding:18px;text-align:center;margin-top:20px;">
+           <div style="font-size:15px;font-weight:800;color:var(--green);margin-bottom:4px;">All items accounted for</div>
+           <div style="font-size:12px;color:var(--text2);">Every item in inventory was scanned.</div>
+         </div>`
+      : `<div class="panel-section" style="margin-top:24px;">Missing Items (${missing.length})</div>
+         ${missing.map(m => `
+           <div class="audit-item-row missing">
+             <div class="audit-check"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+             <div class="audit-item-info">
+               <div class="audit-item-name">${m.name}</div>
+               <div class="audit-item-bc">${m.barcode} · ${m.category}${m.location ? ' · ' + m.location : ''}</div>
+             </div>
+           </div>`).join('')}
+        `}
+  `;
+}
+
+function auditBarcodeInput(val) {
+  if (!activeAudit || val.length < 2) return;
+  const item = db.equipment.find(e => e.barcode.toLowerCase().startsWith(val.toLowerCase()));
+  if (item && !activeAudit.scanned.has(item.barcode)) {
+    // auto-scan on exact match
+    if (item.barcode.toLowerCase() === val.toLowerCase()) {
+      activeAudit.scanned.add(item.barcode);
+      document.getElementById('audit-bc-input').value = '';
+      renderAuditItems();
+      updateAuditProgress();
+      toast(`✓ ${item.name}`, 'success');
+    }
+  }
+}
+
+function auditScanBarcode() {
+  if (!activeAudit) return;
+  const val = document.getElementById('audit-bc-input').value.trim().toUpperCase();
+  if (!val) return;
+  const item = db.equipment.find(e => e.barcode.toUpperCase() === val);
+  if (!item) { toast('Barcode not found in inventory', 'error'); return; }
+  if (activeAudit.scanned.has(item.barcode)) { toast('Already scanned', ''); document.getElementById('audit-bc-input').value = ''; return; }
+  activeAudit.scanned.add(item.barcode);
+  document.getElementById('audit-bc-input').value = '';
+  renderAuditItems();
+  updateAuditProgress();
+  toast(`✓ ${item.name}`, 'success');
+  document.getElementById('audit-bc-input').focus();
+}
+
+function setAuditFilter(f, el) {
+  auditFilter = f;
+  document.querySelectorAll('.audit-filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderAuditItems();
+}
+
+function renderAuditItems() {
+  if (!activeAudit) return;
+  let items = [...db.equipment];
+  if (auditFilter === 'scanned') items = items.filter(e => activeAudit.scanned.has(e.barcode));
+  else if (auditFilter === 'pending') items = items.filter(e => !activeAudit.scanned.has(e.barcode));
+  // Sort: pending first, then scanned
+  items.sort((a, b) => {
+    const aScanned = activeAudit.scanned.has(a.barcode);
+    const bScanned = activeAudit.scanned.has(b.barcode);
+    if (aScanned === bScanned) return a.name.localeCompare(b.name);
+    return aScanned ? 1 : -1;
+  });
+  const el = document.getElementById('audit-items-list');
+  el.innerHTML = items.map(e => {
+    const scanned = activeAudit.scanned.has(e.barcode);
+    return `<div class="audit-item-row ${scanned ? 'scanned' : ''}">
+      <div class="audit-check">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round">
+          ${scanned ? '<polyline points="20 6 9 17 4 12"/>' : ''}
+        </svg>
+      </div>
+      <div class="audit-item-info">
+        <div class="audit-item-name">${e.name}</div>
+        <div class="audit-item-bc">${e.barcode} · ${e.category}</div>
+      </div>
+      ${!scanned ? `<button class="audit-filter-btn" style="font-size:11px;padding:5px 10px;" onclick="manualAuditCheck('${e.barcode}')">Mark</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function manualAuditCheck(barcode) {
+  if (!activeAudit) return;
+  activeAudit.scanned.add(barcode);
+  renderAuditItems();
+  updateAuditProgress();
+}
+
+function updateAuditProgress() {
+  if (!activeAudit) return;
+  const total = db.equipment.length;
+  const scanned = activeAudit.scanned.size;
+  const pct = total > 0 ? Math.round((scanned / total) * 100) : 0;
+  document.getElementById('audit-progress-text').textContent = `${scanned} of ${total} scanned`;
+  document.getElementById('audit-progress-pct').textContent = pct + '%';
+  document.getElementById('audit-progress-fill').style.width = pct + '%';
+}
 
 // ── KEYBOARD ──
-document.getElementById('l-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
-document.getElementById('l-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('l-pass').focus();});
+document.getElementById('l-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('l-user').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('l-pass').focus(); });
 
+// ── AUTO-LOGIN ON PAGE LOAD ──
+document.addEventListener('DOMContentLoaded', async function() {
+  const savedId = localStorage.getItem('ptv_saved_user');
+  if (!savedId) return;
+  await loadFromFirestore();
+  const user = db.users.find(u => u.id === savedId);
+  if (!user) { localStorage.removeItem('ptv_saved_user'); return; }
+  currentUser = user;
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = user.role === 'admin' ? '' : 'none';
+  });
+  showScreen('screen-home');
+  refreshHome();
+});
 </script>
+
 </body>
 </html>
