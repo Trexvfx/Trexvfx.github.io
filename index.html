@@ -863,6 +863,21 @@ function timeAgo(iso) {
 }
 
 // ── LOGIN / LOGOUT ──
+// ── APPLY SESSION (shared by manual login + auto-login) ──
+function applySession(user) {
+  currentUser = user;
+  localStorage.setItem('ptv_saved_user', user.id);
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = user.role === 'admin' ? '' : 'none';
+  });
+  const reqBtn = document.getElementById('req-menu-btn');
+  if (reqBtn) reqBtn.style.display = user.role === 'admin' ? 'none' : '';
+  const schedNav = document.getElementById('sched-nav-item');
+  if (schedNav) schedNav.style.display = '';
+  showScreen('screen-home');
+  refreshHome();
+}
+
 async function doLogin() {
   const uVal = document.getElementById('l-user').value.trim();
   const pVal = document.getElementById('l-pass').value;
@@ -874,21 +889,25 @@ async function doLogin() {
   const user = db.users.find(x => x.username === uVal && x.password === pVal);
   if (!user) { document.getElementById('login-err').textContent = 'Incorrect username or password.'; return; }
 
-  currentUser = user;
-  localStorage.setItem('ptv_saved_user', user.id);
   document.getElementById('l-user').value = '';
   document.getElementById('l-pass').value = '';
-  document.querySelectorAll('.admin-only').forEach(el => {
-    el.style.display = user.role === 'admin' ? '' : 'none';
-  });
-  // req-menu-btn is for students only; hide for admins
-  const reqBtn = document.getElementById('req-menu-btn');
-  if (reqBtn) reqBtn.style.display = user.role === 'admin' ? 'none' : '';
-  // schedule nav shows for all users
-  const schedNav = document.getElementById('sched-nav-item');
-  if (schedNav) schedNav.style.display = '';
-  showScreen('screen-home');
-  refreshHome();
+  applySession(user);
+}
+
+// ── AUTO-LOGIN ON PAGE LOAD ──
+async function tryAutoLogin() {
+  const savedId = localStorage.getItem('ptv_saved_user');
+  if (!savedId) return;
+  showLoading(true);
+  await loadFromFirestore();
+  const user = db.users.find(u => u.id === savedId);
+  showLoading(false);
+  if (user) {
+    applySession(user);
+  } else {
+    // Saved user no longer exists — clear and stay on login
+    localStorage.removeItem('ptv_saved_user');
+  }
 }
 
 function doLogout() {
@@ -1451,6 +1470,9 @@ function checkCapsLock(e) {
 
 document.getElementById('l-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 document.getElementById('l-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('l-pass').focus();});
+
+// Run auto-login on page load
+tryAutoLogin();
 
 </script>
 </body>
