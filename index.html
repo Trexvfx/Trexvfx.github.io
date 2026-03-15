@@ -748,6 +748,7 @@ async function doLogin() {
   if (!user) { document.getElementById('login-err').textContent = 'Incorrect username or password.'; return; }
 
   currentUser = user;
+  localStorage.setItem('ptv_saved_user', user.id);
   document.getElementById('l-user').value = '';
   document.getElementById('l-pass').value = '';
   document.querySelectorAll('.admin-only').forEach(el => {
@@ -761,6 +762,7 @@ function doLogout() {
   stopCamera();
   currentUser = null;
   currentItem = null;
+  localStorage.removeItem('ptv_saved_user');
   db = { users:[], equipment:[], logs:[], reservations:[], counter:200 };
   document.querySelectorAll('.screen').forEach(s => { s.classList.add('hidden'); s.classList.remove('slide-left'); });
   document.getElementById('screen-login').classList.remove('hidden');
@@ -1299,6 +1301,21 @@ function renderMyRequests() {
 // ── KEYBOARD ──
 document.getElementById('l-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 document.getElementById('l-user').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('l-pass').focus(); });
+
+// ── AUTO-LOGIN ON PAGE LOAD ──
+(async function() {
+  const savedId = localStorage.getItem('ptv_saved_user');
+  if (!savedId) return;
+  await loadFromFirestore();
+  const user = db.users.find(u => u.id === savedId);
+  if (!user) { localStorage.removeItem('ptv_saved_user'); return; }
+  currentUser = user;
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = user.role === 'admin' ? '' : 'none';
+  });
+  showScreen('screen-home');
+  refreshHome();
+})();
 </script>
 
 <div id="loading-overlay" style="display:none;position:fixed;inset:0;background:rgba(12,12,14,0.92);z-index:9998;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
