@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Studio Inventory</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0c0e;
+    --bg2: #141417;
+    --bg3: #1c1c21;
+    --bg4: #242429;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0f0f4;
+    --text2: #888896;
+    --text3: #555562;
+    --accent: #3d7eff;
+    --accent-dim: rgba(61,126,255,0.15);
+    --accent-glow: rgba(61,126,255,0.3);
+    --green: #22c55e;
+    --green-dim: rgba(34,197,94,0.12);
+    --amber: #f59e0b;
+    --amber-dim: rgba(245,158,11,0.12);
+    --red: #ef4444;
+    --red-dim: rgba(239,68,68,0.12);
+    --radius: 14px;
+    --radius-sm: 9px;
+    --font: 'Syne', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); overflow: hidden; }
+
+  /* ── SCREENS ── */
+  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; background: var(--bg); transition: transform 0.3s cubic-bezier(.4,0,.2,1), opacity 0.25s; will-change: transform; overflow: hidden; }
+  .screen.hidden { transform: translateX(100%); opacity: 0; pointer-events: none; }
+  .screen.slide-left { transform: translateX(-40%); opacity: 0; pointer-events: none; }
+
+  /* ── TOPBAR ── */
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--bg); }
+  .topbar-title { font-size: 15px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text); }
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
+  .back-btn { display: flex; align-items: center; gap: 6px; background: none; border: none; color: var(--accent); font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; padding: 4px 0; }
+  .back-btn svg { width: 18px; height: 18px; }
+
+  /* ── SCROLLABLE BODY ── */
+  .scroll-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .scroll-body::-webkit-scrollbar { display: none; }
+
+  /* ── LOGIN ── */
+  #screen-login { justify-content: center; align-items: center; padding: 32px 28px; gap: 0; }
+  .login-brand { text-align: center; margin-bottom: 48px; }
+  .login-icon { width: 64px; height: 64px; background: var(--accent); border-radius: 18px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+  .login-icon svg { width: 32px; height: 32px; fill: #fff; }
+  .login-title { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+  .login-sub { font-size: 13px; color: var(--text2); margin-top: 6px; letter-spacing: 0.04em; }
+  .login-form { width: 100%; max-width: 360px; background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; padding: 28px 24px; }
+  .field { margin-bottom: 18px; }
+  .field:last-of-type { margin-bottom: 0; }
+  .field-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); margin-bottom: 8px; display: block; }
+  .field-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-family: var(--font); font-size: 15px; padding: 13px 16px; outline: none; transition: border-color 0.15s; -webkit-appearance: none; }
+  .field-input:focus { border-color: var(--accent); }
+  .field-input::placeholder { color: var(--text3); }
+  .field-select { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-family: var(--font); font-size: 15px; padding: 13px 16px; outline: none; -webkit-appearance: none; appearance: none; cursor: pointer; }
+  .btn { width: 100%; background: var(--accent); color: #fff; font-family: var(--font); font-size: 15px; font-weight: 700; letter-spacing: 0.04em; padding: 15px; border-radius: var(--radius-sm); border: none; cursor: pointer; margin-top: 22px; transition: opacity 0.15s, transform 0.1s; -webkit-appearance: none; }
+  .btn:active { opacity: 0.85; transform: scale(0.98); }
+  .btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+  .btn-danger { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.25); }
+  .login-err { font-size: 13px; color: var(--red); text-align: center; margin-top: 14px; min-height: 18px; }
+
+  /* ── HOME ── */
+  .home-header { padding: 24px 20px 16px; }
+  .home-greeting { font-size: 13px; color: var(--text2); margin-bottom: 4px; letter-spacing: 0.04em; }
+  .home-name { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 20px 24px; }
+  .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 12px; text-align: center; }
+  .stat-num { font-size: 28px; font-weight: 800; color: var(--text); letter-spacing: -1px; }
+  .stat-num.accent { color: var(--accent); }
+  .stat-num.amber { color: var(--amber); }
+  .stat-num.green { color: var(--green); }
+  .stat-lbl { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3); margin-top: 4px; }
+  .section-header { padding: 0 20px 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); }
+  .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 20px 24px; }
+  .menu-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 16px; cursor: pointer; transition: background 0.15s, border-color 0.15s; display: flex; flex-direction: column; gap: 10px; -webkit-tap-highlight-color: transparent; }
+  .menu-card:active { background: var(--bg3); border-color: var(--border2); }
+  .menu-card.accent-card { border-color: var(--accent-glow); background: var(--accent-dim); }
+  .menu-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--bg3); display: flex; align-items: center; justify-content: center; }
+  .menu-card.accent-card .menu-icon { background: var(--accent); }
+  .menu-icon svg { width: 18px; height: 18px; }
+  .menu-card-title { font-size: 14px; font-weight: 700; color: var(--text); }
+  .menu-card-sub { font-size: 12px; color: var(--text2); line-height: 1.4; }
+
+  /* ── BOTTOM NAV ── */
+  .bottom-nav { display: flex; background: var(--bg2); border-top: 1px solid var(--border); padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); flex-shrink: 0; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 6px 4px; transition: opacity 0.15s; }
+  .nav-item svg { width: 22px; height: 22px; color: var(--text3); transition: color 0.15s; }
+  .nav-item-lbl { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); transition: color 0.15s; }
+  .nav-item.active svg { color: var(--accent); }
+  .nav-item.active .nav-item-lbl { color: var(--accent); }
+
+  /* ── SCANNER ── */
+  .scan-section { padding: 20px; }
+  .viewfinder { background: #000; border-radius: var(--radius); overflow: hidden; position: relative; height: 220px; margin-bottom: 20px; border: 1px solid var(--border); }
+  #scan-video { width: 100%; height: 100%; object-fit: cover; display: none; }
+  .vf-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; }
+  .vf-corners { position: absolute; inset: 20px; pointer-events: none; }
+  .vf-corner { position: absolute; width: 22px; height: 22px; border-color: var(--accent); border-style: solid; }
+  .vf-corner.tl { top:0;left:0; border-width: 2px 0 0 2px; }
+  .vf-corner.tr { top:0;right:0; border-width: 2px 2px 0 0; }
+  .vf-corner.bl { bottom:0;left:0; border-width: 0 0 2px 2px; }
+  .vf-corner.br { bottom:0;right:0; border-width: 0 2px 2px 0; }
+  .scan-laser { position: absolute; left: 20px; right: 20px; height: 2px; background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: laser 2.2s ease-in-out infinite; }
+  @keyframes laser { 0%,100%{top:25%} 50%{top:75%} }
+  .vf-hint { color: var(--text2); font-size: 13px; font-weight: 600; letter-spacing: 0.04em; }
+  .cam-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-family: var(--font); font-size: 14px; font-weight: 600; padding: 13px; cursor: pointer; transition: background 0.15s; }
+  .cam-btn:active { background: var(--bg4); }
+  .cam-btn svg { width: 18px; height: 18px; }
+  .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
+  .divider-line { flex: 1; height: 1px; background: var(--border); }
+  .divider-text { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3); }
+  .manual-row { display: flex; gap: 8px; }
+  .manual-row input { flex: 1; }
+
+  /* ── ITEM RESULT ── */
+  .item-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-top: 20px; display: none; }
+  .item-card.visible { display: block; animation: pop-in 0.2s ease-out; }
+  @keyframes pop-in { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+  .item-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+  .item-card-name { font-size: 19px; font-weight: 700; letter-spacing: -0.3px; flex: 1; margin-right: 10px; }
+  .badge { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; padding: 4px 10px; border-radius: 99px; flex-shrink: 0; }
+  .badge-available { background: var(--green-dim); color: var(--green); }
+  .badge-out { background: var(--amber-dim); color: var(--amber); }
+  .badge-cat { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+  .item-barcode { font-family: var(--mono); font-size: 12px; color: var(--text3); margin-bottom: 14px; }
+  .item-meta { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 18px; }
+  .item-who { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
+  .item-who strong { color: var(--amber); }
+  .action-btn { width: 100%; font-family: var(--font); font-size: 15px; font-weight: 700; letter-spacing: 0.04em; padding: 16px; border-radius: var(--radius-sm); border: none; cursor: pointer; transition: opacity 0.15s, transform 0.1s; -webkit-appearance: none; }
+  .action-btn:active { opacity: 0.8; transform: scale(0.98); }
+  .btn-checkout-action { background: var(--accent); color: #fff; }
+  .btn-return-action { background: var(--green-dim); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+
+  /* ── LOGS ── */
+  .filter-row { display: flex; gap: 7px; padding: 16px 20px 8px; overflow-x: auto; }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .filter-pill { white-space: nowrap; font-family: var(--font); font-size: 12px; font-weight: 600; letter-spacing: 0.05em; padding: 8px 16px; border-radius: 99px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; transition: all 0.15s; -webkit-appearance: none; }
+  .filter-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .logs-list { padding: 8px 20px 20px; }
+  .log-row { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; }
+  .log-row-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .log-row-name { font-size: 15px; font-weight: 700; flex: 1; margin-right: 10px; }
+  .log-row-bottom { display: flex; justify-content: space-between; align-items: center; }
+  .log-row-user { font-size: 12px; color: var(--text2); display: flex; align-items: center; gap: 5px; }
+  .log-row-user svg { width: 13px; height: 13px; }
+  .log-row-time { font-size: 11px; font-family: var(--mono); color: var(--text3); }
+  .empty { text-align: center; padding: 60px 20px; color: var(--text3); font-size: 14px; }
+
+  /* ── ADMIN ── */
+  .admin-tabs { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .admin-tab { flex: 1; text-align: center; font-size: 12px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; padding: 14px 8px; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+  .admin-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .panel { display: none; flex: 1; overflow-y: auto; }
+  .panel.active { display: block; }
+  .panel-body { padding: 20px; }
+  .panel-section { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); margin: 24px 0 12px; }
+  .panel-section:first-child { margin-top: 0; }
+  .form-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .form-row { margin-bottom: 14px; }
+  .form-row:last-child { margin-bottom: 0; }
+  .user-row { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .avatar { width: 40px; height: 40px; border-radius: 12px; background: var(--accent-dim); border: 1px solid var(--accent-glow); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: var(--accent); flex-shrink: 0; letter-spacing: 0; }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 14px; font-weight: 700; }
+  .user-meta { font-size: 12px; color: var(--text2); font-family: var(--mono); margin-top: 2px; }
+  .role-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; padding: 3px 8px; border-radius: 99px; }
+  .role-admin { background: var(--accent-dim); color: var(--accent); }
+  .role-student { background: var(--bg3); color: var(--text2); }
+  .icon-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; cursor: pointer; color: var(--text2); display: flex; align-items: center; transition: all 0.15s; }
+  .icon-btn svg { width: 15px; height: 15px; }
+  .icon-btn.del { border-color: rgba(239,68,68,0.25); color: var(--red); }
+  .icon-btn:active { opacity: 0.7; }
+  .equip-row { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .equip-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--bg3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .equip-icon svg { width: 18px; height: 18px; color: var(--text2); }
+  .equip-info { flex: 1; min-width: 0; }
+  .equip-name { font-size: 14px; font-weight: 700; }
+  .equip-meta { font-size: 11px; font-family: var(--mono); color: var(--text3); margin-top: 3px; }
+
+  /* ── MODAL / SHEET ── */
+  .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999; display: flex; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+  .sheet-overlay.open { opacity: 1; pointer-events: all; }
+  .sheet { background: var(--bg2); border-radius: 24px 24px 0 0; padding: 20px 24px calc(32px + env(safe-area-inset-bottom)); width: 100%; transform: translateY(100%); transition: transform 0.3s cubic-bezier(.4,0,.2,1); }
+  .sheet-overlay.open .sheet { transform: translateY(0); }
+  .sheet-handle { width: 40px; height: 4px; background: var(--bg4); border-radius: 99px; margin: 0 auto 24px; }
+  .sheet-title { font-size: 18px; font-weight: 800; margin-bottom: 22px; letter-spacing: -0.3px; }
+  .sheet-err { font-size: 13px; color: var(--red); margin-bottom: 12px; min-height: 16px; }
+  .sheet-row { margin-bottom: 16px; }
+
+  /* ── TOAST ── */
+  .toast { position: fixed; bottom: calc(80px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%) translateY(16px); background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 12px 22px; border-radius: 12px; font-size: 13px; font-weight: 600; opacity: 0; transition: all 0.25s; pointer-events: none; z-index: 9999; white-space: nowrap; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: rgba(34,197,94,0.3); color: var(--green); }
+  .toast.error { border-color: rgba(239,68,68,0.3); color: var(--red); }
+
+  /* ── MY ITEMS CHIP ── */
+  .my-items-strip { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 8px; }
+  .my-item-chip { background: var(--amber-dim); border: 1px solid rgba(245,158,11,0.25); border-radius: var(--radius-sm); padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; }
+  .mic-name { font-size: 14px; font-weight: 700; color: var(--amber); }
+  .mic-barcode { font-size: 11px; font-family: var(--mono); color: rgba(245,158,11,0.7); margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ════════════════════════════════════ LOGIN ════════════════════════════════════ -->
+<div class="screen" id="screen-login">
+  <div class="login-brand">
+    <div class="login-icon">
+      <svg viewBox="0 0 24 24"><path d="M15 4a8 8 0 0 1 0 16M15 4a8 8 0 0 0 0 16M15 4H3a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h12M9 9h4M9 12h4M9 15h4"/></svg>
+    </div>
+    <div class="login-title">Studio<span style="color:var(--accent)">IO</span></div>
+    <div class="login-sub">Equipment Management</div>
+  </div>
+  <div class="login-form">
+    <div class="field">
+      <label class="field-label">Username</label>
+      <input class="field-input" id="l-user" placeholder="your username" autocomplete="username" autocorrect="off" autocapitalize="none">
+    </div>
+    <div class="field">
+      <label class="field-label">Password</label>
+      <input class="field-input" type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn" onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════ HOME ════════════════════════════════════ -->
+<div class="screen hidden" id="screen-home">
+  <div class="topbar">
+    <div class="topbar-title">Studio<span style="color:var(--accent)">IO</span></div>
+    <button onclick="doLogout()" style="background:none;border:none;color:var(--text3);font-family:var(--font);font-size:13px;cursor:pointer;font-weight:600;">Sign Out</button>
+  </div>
+  <div class="scroll-body">
+    <div class="home-header">
+      <div class="home-greeting">Welcome back,</div>
+      <div class="home-name" id="home-name">—</div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num accent" id="stat-total">0</div><div class="stat-lbl">Total</div></div>
+      <div class="stat-card"><div class="stat-num green" id="stat-avail">0</div><div class="stat-lbl">Available</div></div>
+      <div class="stat-card"><div class="stat-num amber" id="stat-out">0</div><div class="stat-lbl">Out</div></div>
+    </div>
+    <div id="my-items-wrap" style="display:none;">
+      <div class="section-header">You Currently Have</div>
+      <div class="my-items-strip" id="my-items-list"></div>
+    </div>
+    <div class="section-header">Quick Actions</div>
+    <div class="menu-grid">
+      <div class="menu-card accent-card" onclick="navTo('scanner')">
+        <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M8 12h8M12 8v8"/></svg></div>
+        <div class="menu-card-title">Scan & Check Out</div>
+        <div class="menu-card-sub">Use camera or manual entry</div>
+      </div>
+      <div class="menu-card" onclick="navTo('logs')">
+        <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2.2" stroke-linecap="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M9 12l2 2 4-4"/></svg></div>
+        <div class="menu-card-title">View Logs</div>
+        <div class="menu-card-sub">Checkout history</div>
+      </div>
+      <div class="menu-card admin-only" id="admin-menu-btn" style="display:none;" onclick="navTo('admin')">
+        <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2.2" stroke-linecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
+        <div class="menu-card-title">Admin Panel</div>
+        <div class="menu-card-sub">Users & inventory</div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="navTo('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="nav-item-lbl">Home</span>
+    </div>
+    <div class="nav-item" onclick="navTo('scanner')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h.01M14 17h.01M17 14h.01M17 17h3M20 14v3"/></svg>
+      <span class="nav-item-lbl">Scan</span>
+    </div>
+    <div class="nav-item" onclick="navTo('logs')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+      <span class="nav-item-lbl">Logs</span>
+    </div>
+    <div class="nav-item admin-only" id="admin-nav-item" style="display:none;" onclick="navTo('admin')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/><path d="M19 11l2 2-5 5-2.5-2.5"/></svg>
+      <span class="nav-item-lbl">Admin</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════ SCANNER ════════════════════════════════════ -->
+<div class="screen hidden" id="screen-scanner">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="back-btn" onclick="navTo('home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Back
+      </button>
+    </div>
+    <div class="topbar-title">Scan Item</div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="scroll-body">
+    <div class="scan-section">
+      <div class="viewfinder">
+        <video id="scan-video" playsinline autoplay muted></video>
+        <div class="vf-overlay" id="vf-overlay">
+          <div class="vf-corners">
+            <div class="vf-corner tl"></div><div class="vf-corner tr"></div>
+            <div class="vf-corner bl"></div><div class="vf-corner br"></div>
+          </div>
+          <div class="scan-laser" id="scan-laser" style="display:none;"></div>
+          <div class="vf-hint" id="vf-hint">Tap below to open camera</div>
+        </div>
+      </div>
+      <button class="cam-btn" id="cam-btn" onclick="toggleCamera()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Open Camera Scanner
+      </button>
+      <div class="divider"><div class="divider-line"></div><div class="divider-text">or type manually</div><div class="divider-line"></div></div>
+      <div class="manual-row">
+        <input class="field-input" id="bc-input" placeholder="Enter barcode (e.g. STU-001)" autocomplete="off" autocorrect="off" autocapitalize="characters" oninput="onBarcodeInput(this.value)" onkeydown="if(event.key==='Enter')lookupBarcode()">
+        <button class="cam-btn" style="width:auto;padding:13px 18px;flex-shrink:0;" onclick="lookupBarcode()">Search</button>
+      </div>
+
+      <div class="item-card" id="item-card">
+        <div class="item-card-top">
+          <div class="item-card-name" id="ic-name"></div>
+          <span class="badge" id="ic-status-badge"></span>
+        </div>
+        <div class="item-barcode" id="ic-barcode"></div>
+        <div class="item-meta"><span class="badge badge-cat" id="ic-cat"></span></div>
+        <div class="item-who" id="ic-who"></div>
+        <button class="action-btn" id="ic-action-btn" onclick="doAction()"></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════ LOGS ════════════════════════════════════ -->
+<div class="screen hidden" id="screen-logs">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="back-btn" onclick="navTo('home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Back
+      </button>
+    </div>
+    <div class="topbar-title">Checkout Logs</div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="filter-row">
+    <button class="filter-pill active" onclick="setFilter('all',this)">All Activity</button>
+    <button class="filter-pill" onclick="setFilter('out',this)">Checked Out</button>
+    <button class="filter-pill" onclick="setFilter('in',this)">Returned</button>
+    <button class="filter-pill" onclick="setFilter('mine',this)">My History</button>
+  </div>
+  <div class="scroll-body">
+    <div class="logs-list" id="logs-list"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════ ADMIN ════════════════════════════════════ -->
+<div class="screen hidden" id="screen-admin">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="back-btn" onclick="navTo('home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Back
+      </button>
+    </div>
+    <div class="topbar-title">Admin Panel</div>
+    <div style="width:60px;"></div>
+  </div>
+  <div class="admin-tabs">
+    <div class="admin-tab active" onclick="adminTab('users',this)">Users</div>
+    <div class="admin-tab" onclick="adminTab('equipment',this)">Equipment</div>
+    <div class="admin-tab" onclick="adminTab('alllogs',this)">Full Log</div>
+  </div>
+
+  <!-- Users Panel -->
+  <div class="panel active" id="panel-users">
+    <div class="panel-body">
+      <button class="btn" style="margin-top:0;margin-bottom:4px;" onclick="openSheet('sheet-new-user')">+ Create User Account</button>
+      <div class="panel-section">All Users</div>
+      <div id="admin-users-list"></div>
+    </div>
+  </div>
+
+  <!-- Equipment Panel -->
+  <div class="panel" id="panel-equipment">
+    <div class="panel-body">
+      <div class="form-card">
+        <div style="font-size:14px;font-weight:700;margin-bottom:16px;">Add Equipment</div>
+        <div class="form-row">
+          <label class="field-label">Item Name</label>
+          <input class="field-input" id="eq-name" placeholder="e.g. Sony A7 III Camera" autocomplete="off">
+        </div>
+        <div class="form-row">
+          <label class="field-label">Barcode</label>
+          <input class="field-input" id="eq-bc" placeholder="e.g. STU-007" autocomplete="off" autocapitalize="characters">
+        </div>
+        <div class="form-row">
+          <label class="field-label">Category</label>
+          <select class="field-select" id="eq-cat">
+            <option>Camera</option><option>Lens</option><option>Audio</option><option>Lighting</option><option>Tripod</option><option>Cable</option><option>Teleprompter</option><option>Monitor</option><option>Other</option>
+          </select>
+        </div>
+        <button class="btn" style="margin-top:16px;" onclick="addEquipment()">Add to Inventory</button>
+      </div>
+      <div class="panel-section">All Equipment</div>
+      <div id="admin-equip-list"></div>
+    </div>
+  </div>
+
+  <!-- Full Log Panel -->
+  <div class="panel" id="panel-alllogs">
+    <div class="panel-body" style="padding-bottom:32px;">
+      <div class="panel-section" style="margin-top:0;">Complete Activity Log</div>
+      <div id="admin-all-logs"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════ SHEET: New User ════════════════════════════════════ -->
+<div class="sheet-overlay" id="sheet-new-user" onclick="sheetOverlayClick(event,'sheet-new-user')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Create User Account</div>
+    <div class="sheet-row">
+      <label class="field-label">Full Name</label>
+      <input class="field-input" id="nu-name" placeholder="e.g. Jordan Smith" autocomplete="off">
+    </div>
+    <div class="sheet-row">
+      <label class="field-label">Username</label>
+      <input class="field-input" id="nu-user" placeholder="e.g. jordans" autocomplete="off" autocorrect="off" autocapitalize="none">
+    </div>
+    <div class="sheet-row">
+      <label class="field-label">Password</label>
+      <input class="field-input" type="password" id="nu-pass" placeholder="••••••••">
+    </div>
+    <div class="sheet-row">
+      <label class="field-label">Role</label>
+      <select class="field-select" id="nu-role">
+        <option value="student">Student</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <div class="sheet-err" id="nu-err"></div>
+    <button class="btn" onclick="createUser()">Create Account</button>
+    <button class="btn btn-ghost" style="margin-top:10px;" onclick="closeSheet('sheet-new-user')">Cancel</button>
+  </div>
+</div>
+
+<script>
+// ── DATA LAYER ──
+const DB_KEY = 'studiio_v2';
+
+function loadDB() {
+  try {
+    const d = localStorage.getItem(DB_KEY);
+    if (d) return JSON.parse(d);
+  } catch(e) {}
+  return null;
+}
+
+function saveDB() {
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+}
+
+function initDB() {
+  const saved = loadDB();
+  if (saved) return saved;
+  return {
+    users: [
+      { id:'u1', name:'Admin', username:'admin', password:'studio2025', role:'admin' }
+    ],
+    equipment: [
+      { id:'e1', name:'Sony A7 III', barcode:'STU-001', category:'Camera', checkedOutBy:null, checkedOutAt:null },
+      { id:'e2', name:'Rode NTG-3 Shotgun Mic', barcode:'STU-002', category:'Audio', checkedOutBy:null, checkedOutAt:null },
+      { id:'e3', name:'Arri SkyPanel S30-C', barcode:'STU-003', category:'Lighting', checkedOutBy:null, checkedOutAt:null },
+      { id:'e4', name:'Sachtler Fluid Head Tripod', barcode:'STU-004', category:'Tripod', checkedOutBy:null, checkedOutAt:null },
+      { id:'e5', name:'Canon EF 70-200mm f/2.8', barcode:'STU-005', category:'Lens', checkedOutBy:null, checkedOutAt:null },
+      { id:'e6', name:'Teleprompter Pro 17"', barcode:'STU-006', category:'Teleprompter', checkedOutBy:null, checkedOutAt:null },
+      { id:'e7', name:'SmallHD Focus 7 Monitor', barcode:'STU-007', category:'Monitor', checkedOutBy:null, checkedOutAt:null },
+    ],
+    logs: [],
+    counter: 200
+  };
+}
+
+let db = initDB();
+let currentUser = null;
+let currentItem = null;
+let logFilter = 'all';
+let cameraStream = null;
+
+// ── IDs ──
+function nextId() { db.counter++; saveDB(); return 'id' + db.counter; }
+
+// ── TOAST ──
+let toastTimer;
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+// ── TIME ──
+function timeAgo(iso) {
+  if (!iso) return '';
+  const d = new Date(iso), now = Date.now(), diff = now - d;
+  if (diff < 60000) return 'just now';
+  if (diff < 3600000) return Math.floor(diff/60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' · ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+}
+
+// ── LOGIN / LOGOUT ──
+function doLogin() {
+  const u = document.getElementById('l-user').value.trim();
+  const p = document.getElementById('l-pass').value;
+  db = initDB();
+  const user = db.users.find(x => x.username === u && x.password === p);
+  if (!user) { document.getElementById('login-err').textContent = 'Incorrect username or password.'; return; }
+  currentUser = user;
+  document.getElementById('login-err').textContent = '';
+  document.getElementById('l-user').value = '';
+  document.getElementById('l-pass').value = '';
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = user.role === 'admin' ? '' : 'none';
+  });
+  showScreen('screen-home');
+  refreshHome();
+}
+
+function doLogout() {
+  stopCamera();
+  currentUser = null;
+  currentItem = null;
+  document.querySelectorAll('.screen').forEach(s => { s.classList.add('hidden'); s.classList.remove('slide-left'); });
+  document.getElementById('screen-login').classList.remove('hidden');
+}
+
+// ── SCREEN NAV ──
+let currentScreen = 'screen-login';
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => {
+    if (s.id === id) { s.classList.remove('hidden'); s.classList.remove('slide-left'); }
+    else if (s.id === currentScreen) { s.classList.add('slide-left'); setTimeout(() => s.classList.add('hidden'), 300); }
+    else { s.classList.add('hidden'); s.classList.remove('slide-left'); }
+  });
+  currentScreen = id;
+}
+
+function navTo(name) {
+  const map = { home:'screen-home', scanner:'screen-scanner', logs:'screen-logs', admin:'screen-admin' };
+  const id = map[name];
+  if (!id) return;
+  stopCamera();
+  showScreen(id);
+  // update nav
+  document.querySelectorAll('.bottom-nav .nav-item').forEach((el, i) => {
+    el.classList.remove('active');
+  });
+  const navItems = document.querySelectorAll('#screen-home .nav-item');
+  const navMap = ['home','scanner','logs','admin'];
+  navItems.forEach(el => { if (el.onclick && el.onclick.toString().includes(name)) el.classList.add('active'); });
+  if (name === 'home') refreshHome();
+  if (name === 'logs') renderLogs();
+  if (name === 'admin') { renderAdminUsers(); renderAdminEquip(); renderAdminAllLogs(); }
+  if (name === 'scanner') { currentItem = null; document.getElementById('item-card').classList.remove('visible'); document.getElementById('bc-input').value = ''; }
+}
+
+// ── HOME ──
+function refreshHome() {
+  db = initDB();
+  document.getElementById('home-name').textContent = currentUser.name;
+  const total = db.equipment.length;
+  const out = db.equipment.filter(e => e.checkedOutBy).length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-avail').textContent = total - out;
+  document.getElementById('stat-out').textContent = out;
+  // my items
+  const mine = db.equipment.filter(e => e.checkedOutBy === currentUser.id);
+  const wrap = document.getElementById('my-items-wrap');
+  if (mine.length > 0) {
+    wrap.style.display = '';
+    document.getElementById('my-items-list').innerHTML = mine.map(e => `
+      <div class="my-item-chip">
+        <div><div class="mic-name">${e.name}</div><div class="mic-barcode">${e.barcode}</div></div>
+        <span class="badge badge-out">Out</span>
+      </div>`).join('');
+  } else { wrap.style.display = 'none'; }
+}
+
+// ── SCANNER ──
+function onBarcodeInput(val) {
+  if (val.length >= 2) {
+    db = initDB();
+    const item = db.equipment.find(e => e.barcode.toLowerCase().startsWith(val.toLowerCase()) || e.barcode.toLowerCase() === val.toLowerCase());
+    if (item) { currentItem = item; renderItemCard(item); }
+    else { document.getElementById('item-card').classList.remove('visible'); }
+  } else {
+    document.getElementById('item-card').classList.remove('visible');
+    currentItem = null;
+  }
+}
+
+function lookupBarcode() {
+  db = initDB();
+  const val = document.getElementById('bc-input').value.trim().toUpperCase();
+  if (!val) return;
+  const item = db.equipment.find(e => e.barcode.toUpperCase() === val);
+  if (!item) { toast('Barcode not found', 'error'); document.getElementById('item-card').classList.remove('visible'); return; }
+  currentItem = item;
+  renderItemCard(item);
+}
+
+function renderItemCard(item) {
+  document.getElementById('ic-name').textContent = item.name;
+  document.getElementById('ic-barcode').textContent = item.barcode;
+  document.getElementById('ic-cat').textContent = item.category;
+  const sb = document.getElementById('ic-status-badge');
+  const ab = document.getElementById('ic-action-btn');
+  const who = document.getElementById('ic-who');
+  if (item.checkedOutBy) {
+    const u = db.users.find(u => u.id === item.checkedOutBy);
+    sb.textContent = 'Checked Out'; sb.className = 'badge badge-out';
+    who.innerHTML = `Checked out by <strong>${u ? u.name : 'Unknown'}</strong> · ${timeAgo(item.checkedOutAt)}`;
+    ab.textContent = 'Return Item';
+    ab.className = 'action-btn btn-return-action';
+  } else {
+    sb.textContent = 'Available'; sb.className = 'badge badge-available';
+    who.innerHTML = '';
+    ab.textContent = 'Check Out to Me';
+    ab.className = 'action-btn btn-checkout-action';
+  }
+  document.getElementById('item-card').classList.add('visible');
+}
+
+function doAction() {
+  if (!currentItem) return;
+  db = initDB();
+  const item = db.equipment.find(e => e.id === currentItem.id);
+  if (!item) return;
+  const now = new Date().toISOString();
+  if (item.checkedOutBy) {
+    if (item.checkedOutBy !== currentUser.id && currentUser.role !== 'admin') {
+      toast('Only the borrower or an admin can return this item', 'error'); return;
+    }
+    db.logs.unshift({ id: nextId(), itemId: item.id, itemName: item.name, barcode: item.barcode, category: item.category, userId: currentUser.id, userName: currentUser.name, action: 'return', time: now });
+    item.checkedOutBy = null; item.checkedOutAt = null;
+    toast('Item returned ✓', 'success');
+  } else {
+    db.logs.unshift({ id: nextId(), itemId: item.id, itemName: item.name, barcode: item.barcode, category: item.category, userId: currentUser.id, userName: currentUser.name, action: 'checkout', time: now });
+    item.checkedOutBy = currentUser.id; item.checkedOutAt = now;
+    toast('Checked out to you ✓', 'success');
+  }
+  saveDB();
+  currentItem = item;
+  renderItemCard(item);
+}
+
+// ── CAMERA ──
+function toggleCamera() {
+  if (cameraStream) { stopCamera(); return; }
+  const vid = document.getElementById('scan-video');
+  const btn = document.getElementById('cam-btn');
+  const laser = document.getElementById('scan-laser');
+  const hint = document.getElementById('vf-hint');
+  if (!navigator.mediaDevices?.getUserMedia) { toast('Camera not supported — use manual entry', 'error'); return; }
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } } })
+    .then(stream => {
+      cameraStream = stream;
+      vid.srcObject = stream; vid.style.display = 'block';
+      document.getElementById('vf-overlay').style.pointerEvents = 'none';
+      laser.style.display = 'block';
+      hint.textContent = 'Camera active — use manual entry below';
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Stop Camera`;
+    })
+    .catch(() => toast('Camera permission denied — use manual entry', 'error'));
+}
+
+function stopCamera() {
+  if (!cameraStream) return;
+  cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null;
+  const vid = document.getElementById('scan-video');
+  vid.srcObject = null; vid.style.display = 'none';
+  document.getElementById('scan-laser').style.display = 'none';
+  document.getElementById('vf-hint').textContent = 'Tap below to open camera';
+  const btn = document.getElementById('cam-btn');
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Open Camera Scanner`;
+}
+
+// ── LOGS ──
+function setFilter(f, el) {
+  logFilter = f;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderLogs();
+}
+
+function renderLogs() {
+  db = initDB();
+  let logs = [...db.logs];
+  if (logFilter === 'out') logs = logs.filter(l => l.action === 'checkout');
+  else if (logFilter === 'in') logs = logs.filter(l => l.action === 'return');
+  else if (logFilter === 'mine') logs = logs.filter(l => l.userId === currentUser.id);
+  const el = document.getElementById('logs-list');
+  if (logs.length === 0) { el.innerHTML = '<div class="empty">No logs match this filter.</div>'; return; }
+  el.innerHTML = logs.map(l => `
+    <div class="log-row">
+      <div class="log-row-top">
+        <div class="log-row-name">${l.itemName}</div>
+        <span class="badge ${l.action === 'checkout' ? 'badge-out' : 'badge-available'}">${l.action === 'checkout' ? 'Out' : 'In'}</span>
+      </div>
+      <div class="log-row-bottom">
+        <div class="log-row-user">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
+          ${l.userName}
+          <span style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-left:4px;">${l.barcode}</span>
+        </div>
+        <div class="log-row-time">${timeAgo(l.time)}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── ADMIN ──
+function adminTab(name, el) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+}
+
+function renderAdminUsers() {
+  db = initDB();
+  const el = document.getElementById('admin-users-list');
+  el.innerHTML = db.users.map(u => `
+    <div class="user-row">
+      <div class="avatar">${u.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
+      <div class="user-info">
+        <div class="user-name">${u.name}</div>
+        <div class="user-meta">@${u.username}</div>
+      </div>
+      <span class="role-badge ${u.role === 'admin' ? 'role-admin' : 'role-student'}">${u.role}</span>
+      ${u.id !== 'u1' ? `<button class="icon-btn del" onclick="deleteUser('${u.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>` : ''}
+    </div>`).join('');
+}
+
+function renderAdminEquip() {
+  db = initDB();
+  const el = document.getElementById('admin-equip-list');
+  el.innerHTML = db.equipment.map(e => `
+    <div class="equip-row">
+      <div class="equip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div>
+      <div class="equip-info">
+        <div class="equip-name">${e.name}</div>
+        <div class="equip-meta">${e.barcode} · ${e.category}</div>
+      </div>
+      <span class="badge ${e.checkedOutBy ? 'badge-out' : 'badge-available'}" style="flex-shrink:0;margin-right:6px;">${e.checkedOutBy ? 'Out' : 'In'}</span>
+      <button class="icon-btn del" onclick="deleteEquip('${e.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+    </div>`).join('');
+}
+
+function renderAdminAllLogs() {
+  db = initDB();
+  const el = document.getElementById('admin-all-logs');
+  const logs = db.logs;
+  if (logs.length === 0) { el.innerHTML = '<div class="empty">No activity recorded yet.</div>'; return; }
+  el.innerHTML = logs.map(l => `
+    <div class="log-row">
+      <div class="log-row-top">
+        <div class="log-row-name">${l.itemName}</div>
+        <span class="badge ${l.action === 'checkout' ? 'badge-out' : 'badge-available'}">${l.action === 'checkout' ? 'Out' : 'In'}</span>
+      </div>
+      <div class="log-row-bottom">
+        <div class="log-row-user">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
+          ${l.userName}
+          <span style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-left:4px;">${l.barcode}</span>
+        </div>
+        <div class="log-row-time">${timeAgo(l.time)}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── USER MGMT ──
+function openSheet(id) { document.getElementById(id).classList.add('open'); }
+function closeSheet(id) { document.getElementById(id).classList.remove('open'); }
+function sheetOverlayClick(e, id) { if (e.target === e.currentTarget) closeSheet(id); }
+
+function createUser() {
+  const name = document.getElementById('nu-name').value.trim();
+  const username = document.getElementById('nu-user').value.trim().toLowerCase();
+  const pass = document.getElementById('nu-pass').value;
+  const role = document.getElementById('nu-role').value;
+  const err = document.getElementById('nu-err');
+  if (!name || !username || !pass) { err.textContent = 'All fields are required.'; return; }
+  db = initDB();
+  if (db.users.find(u => u.username === username)) { err.textContent = 'Username is already taken.'; return; }
+  db.users.push({ id: nextId(), name, username, password: pass, role });
+  saveDB();
+  err.textContent = '';
+  document.getElementById('nu-name').value = '';
+  document.getElementById('nu-user').value = '';
+  document.getElementById('nu-pass').value = '';
+  closeSheet('sheet-new-user');
+  renderAdminUsers();
+  toast(`Account created for ${name}`, 'success');
+}
+
+function deleteUser(id) {
+  if (!confirm('Remove this user?')) return;
+  db = initDB();
+  db.users = db.users.filter(u => u.id !== id);
+  saveDB();
+  renderAdminUsers();
+  toast('User removed');
+}
+
+// ── EQUIPMENT MGMT ──
+function addEquipment() {
+  const name = document.getElementById('eq-name').value.trim();
+  const barcode = document.getElementById('eq-bc').value.trim().toUpperCase();
+  const category = document.getElementById('eq-cat').value;
+  if (!name || !barcode) { toast('Name and barcode are required', 'error'); return; }
+  db = initDB();
+  if (db.equipment.find(e => e.barcode.toUpperCase() === barcode)) { toast('That barcode already exists', 'error'); return; }
+  db.equipment.push({ id: nextId(), name, barcode, category, checkedOutBy: null, checkedOutAt: null });
+  saveDB();
+  document.getElementById('eq-name').value = '';
+  document.getElementById('eq-bc').value = '';
+  renderAdminEquip();
+  refreshHome();
+  toast(`${name} added ✓`, 'success');
+}
+
+function deleteEquip(id) {
+  if (!confirm('Remove this item from inventory?')) return;
+  db = initDB();
+  db.equipment = db.equipment.filter(e => e.id !== id);
+  saveDB();
+  renderAdminEquip();
+  refreshHome();
+  toast('Equipment removed');
+}
+
+// ── KEYBOARD ──
+document.getElementById('l-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('l-user').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('l-pass').focus(); });
+</script>
+</body>
+</html>
