@@ -586,14 +586,13 @@
         Back
       </button>
     </div>
-    <div class="topbar-title" id="sched-topbar-title">Schedule</div>
-    <!-- admin: + button to open sheet -->
+    <div class="topbar-title">Schedule</div>
     <button id="sched-add-btn" onclick="openSheet('sheet-new-sched')" style="display:none;background:none;border:none;color:var(--accent);font-family:var(--font);font-size:26px;font-weight:300;cursor:pointer;padding:0 4px;line-height:1;">+</button>
     <div id="sched-add-placeholder" style="width:32px;"></div>
   </div>
 
-  <!-- ── ADMIN VIEW: full calendar ── -->
-  <div id="sched-admin-view" style="display:none;flex:1;overflow:hidden;flex-direction:column;">
+  <!-- ── ADMIN VIEW ── -->
+  <div id="sched-admin-view" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
     <div class="scroll-body">
       <div class="cal-header">
         <div class="cal-month" id="cal-month-label">March 2026</div>
@@ -619,8 +618,8 @@
     </div>
   </div>
 
-  <!-- ── STUDENT VIEW: request form ── -->
-  <div id="sched-student-view" style="display:none;" class="scroll-body">
+  <!-- ── STUDENT VIEW ── -->
+  <div id="sched-student-view" style="display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;">
     <div style="padding:20px;">
       <div style="background:var(--accent-dim);border:1px solid var(--accent-glow);border-radius:var(--radius);padding:16px;margin-bottom:24px;">
         <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px;">Equipment Request</div>
@@ -646,7 +645,6 @@
       </div>
       <div id="sr-err" style="color:var(--red);font-size:13px;margin-bottom:12px;min-height:16px;"></div>
       <button class="btn" onclick="submitStudentRequest()">Submit Request</button>
-
       <div style="margin-top:32px;">
         <div class="section-header" style="padding:0 0 12px;">My Requests</div>
         <div id="my-requests-list"></div>
@@ -897,8 +895,10 @@ function navTo(name) {
   if (name === 'scanner') { currentItem = null; document.getElementById('item-card').classList.remove('visible'); document.getElementById('bc-input').value = ''; }
   if (name === 'schedule') {
     const isAdmin = currentUser && currentUser.role === 'admin';
-    document.getElementById('sched-admin-view').style.display = isAdmin ? 'flex' : 'none';
-    document.getElementById('sched-student-view').style.display = isAdmin ? 'none' : 'block';
+    const adminView = document.getElementById('sched-admin-view');
+    const studentView = document.getElementById('sched-student-view');
+    adminView.style.display = isAdmin ? 'flex' : 'none';
+    studentView.style.display = isAdmin ? 'none' : 'flex';
     document.getElementById('sched-add-btn').style.display = isAdmin ? '' : 'none';
     document.getElementById('sched-add-placeholder').style.display = isAdmin ? 'none' : '';
     if (isAdmin) {
