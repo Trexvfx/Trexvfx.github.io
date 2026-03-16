@@ -757,6 +757,7 @@
 
 <!-- ══ SHEET: New Reservation ══ -->
 
+<script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
@@ -1080,28 +1081,97 @@ async function doAction() {
 }
 
 // ── CAMERA ──
+// ── CAMERA / BARCODE SCANNER (ZXing) ──
+let _zxingReader = null;
+let _scanActive = false;
+
 function toggleCamera() {
-  if (cameraStream) { stopCamera(); return; }
+  if (_scanActive) { stopCamera(); return; }
+  startCamera();
+}
+
+function startCamera() {
   const vid = document.getElementById('scan-video');
   const btn = document.getElementById('cam-btn');
   const laser = document.getElementById('scan-laser');
   const hint = document.getElementById('vf-hint');
-  if (!navigator.mediaDevices?.getUserMedia) { toast('Camera not supported — use manual entry', 'error'); return; }
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } } })
-    .then(stream => {
-      cameraStream = stream;
-      vid.srcObject = stream; vid.style.display = 'block';
-      document.getElementById('vf-overlay').style.pointerEvents = 'none';
-      laser.style.display = 'block';
-      hint.textContent = 'Camera active — use manual entry below';
-      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Stop Camera`;
+
+  if (typeof ZXing === 'undefined') {
+    toast('Scanner library not loaded — use manual entry', 'error'); return;
+  }
+
+  try {
+    _zxingReader = new ZXing.BrowserMultiFormatReader();
+  } catch(e) {
+    toast('Scanner init failed — use manual entry', 'error'); return;
+  }
+
+  hint.textContent = 'Starting camera…';
+  vid.style.display = 'block';
+  laser.style.display = 'block';
+  document.getElementById('vf-overlay').style.pointerEvents = 'none';
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Stop Camera`;
+  _scanActive = true;
+
+  // Get rear camera device id if available
+  ZXing.BrowserMultiFormatReader.listVideoInputDevices()
+    .then(devices => {
+      // prefer rear camera
+      const rear = devices.find(d => /back|rear|environment/i.test(d.label)) || devices[devices.length - 1];
+      const deviceId = rear ? rear.deviceId : undefined;
+      return _zxingReader.decodeFromVideoDevice(deviceId, 'scan-video', (result, err) => {
+        if (result) {
+          const code = result.getText();
+          hint.textContent = '✓ Scanned: ' + code;
+          // Fill the manual input and trigger lookup
+          const bcInput = document.getElementById('bc-input');
+          if (bcInput) {
+            bcInput.value = code;
+            onBarcodeInput(code);
+          }
+          // Auto-lookup
+          const item = db.equipment.find(e => e.barcode.toUpperCase() === code.toUpperCase());
+          if (item) {
+            currentItem = item;
+            renderItemCard(item);
+            stopCamera();
+            toast('Scanned: ' + item.name, 'success');
+          } else {
+            toast('Barcode not found: ' + code, 'error');
+          }
+        }
+        // err is normal when no barcode in frame — ignore NotFoundException
+      });
     })
-    .catch(() => toast('Camera permission denied — use manual entry', 'error'));
+    .then(controls => {
+      // store stream reference for stopCamera
+      cameraStream = vid.srcObject;
+      hint.textContent = 'Point camera at barcode';
+    })
+    .catch(err => {
+      _scanActive = false;
+      vid.style.display = 'none';
+      laser.style.display = 'none';
+      hint.textContent = 'Tap below to open camera';
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Open Camera Scanner`;
+      if (/permission/i.test(err.message)) {
+        toast('Camera permission denied', 'error');
+      } else {
+        toast('Camera error — use manual entry', 'error');
+      }
+    });
 }
 
 function stopCamera() {
-  if (!cameraStream) return;
-  cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null;
+  _scanActive = false;
+  if (_zxingReader) {
+    try { _zxingReader.reset(); } catch(e) {}
+    _zxingReader = null;
+  }
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
   const vid = document.getElementById('scan-video');
   vid.srcObject = null; vid.style.display = 'none';
   document.getElementById('scan-laser').style.display = 'none';
