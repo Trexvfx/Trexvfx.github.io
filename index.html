@@ -502,17 +502,17 @@
   </div>
   <div class="scroll-body">
     <div class="scan-section">
-      <div class="viewfinder">
-        <video id="scan-video" playsinline autoplay muted></video>
-        <div class="vf-overlay" id="vf-overlay">
+      <div class="viewfinder" style="height:auto;min-height:220px;background:#000;">
+        <div id="qr-reader" style="width:100%;border:none!important;"></div>
+        <div class="vf-overlay" id="vf-overlay" style="position:absolute;inset:0;pointer-events:none;display:none;">
           <div class="vf-corners">
             <div class="vf-corner tl"></div><div class="vf-corner tr"></div>
             <div class="vf-corner bl"></div><div class="vf-corner br"></div>
           </div>
-          <div class="scan-laser" id="scan-laser" style="display:none;"></div>
-          <div class="vf-hint" id="vf-hint">Tap below to open camera</div>
+          <div class="scan-laser" id="scan-laser"></div>
         </div>
       </div>
+      <div id="vf-hint" style="text-align:center;font-size:13px;font-weight:600;color:var(--text2);padding:10px 0 4px;letter-spacing:0.04em;">Tap below to open camera</div>
       <button class="cam-btn" id="cam-btn" onclick="toggleCamera()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
         Open Camera Scanner
@@ -757,7 +757,7 @@
 
 <!-- ══ SHEET: New Reservation ══ -->
 
-<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
@@ -1081,13 +1081,9 @@ async function doAction() {
 }
 
 // ── CAMERA ──
-// ── CAMERA / BARCODE SCANNER ──
+// ── CAMERA / BARCODE SCANNER (html5-qrcode) ──
 let _scanActive = false;
-let _scanRAF = null;
-let _scanCanvas = null;
-let _scanCtx = null;
-let _zxingReader = null;
-let _lastScan = 0;
+let _html5QrCode = null;
 
 const _CAM_BTN_OPEN = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Open Camera Scanner`;
 const _CAM_BTN_STOP = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Stop Camera`;
@@ -1097,148 +1093,92 @@ function toggleCamera() {
   startCamera();
 }
 
-async function startCamera() {
-  const vid = document.getElementById('scan-video');
-  const btn = document.getElementById('cam-btn');
-  const laser = document.getElementById('scan-laser');
+function startCamera() {
   const hint = document.getElementById('vf-hint');
+  const btn  = document.getElementById('cam-btn');
 
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    toast('Camera not supported on this device', 'error'); return;
+  if (typeof Html5Qrcode === 'undefined') {
+    toast('Scanner not loaded yet — try again in a moment', 'error');
+    return;
   }
 
   hint.textContent = 'Starting camera…';
   btn.innerHTML = _CAM_BTN_STOP;
+  _scanActive = true;
 
-  try {
-    // Try rear camera first, fall back to any camera
-    let stream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
-      });
-    } catch(e) {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  // Clean up any previous instance
+  if (_html5QrCode) {
+    try { _html5QrCode.clear(); } catch(e) {}
+    _html5QrCode = null;
+  }
+
+  _html5QrCode = new Html5Qrcode('qr-reader');
+
+  const config = {
+    fps: 10,
+    qrbox: { width: 250, height: 150 },
+    aspectRatio: 1.5,
+    formatsToSupport: [
+      Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.CODE_39,
+      Html5QrcodeSupportedFormats.CODE_93,
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.UPC_E,
+      Html5QrcodeSupportedFormats.QR_CODE,
+      Html5QrcodeSupportedFormats.ITF,
+      Html5QrcodeSupportedFormats.DATA_MATRIX
+    ]
+  };
+
+  _html5QrCode.start(
+    { facingMode: 'environment' },
+    config,
+    (decodedText) => {
+      // Success callback - barcode found
+      _onBarcodeScan(decodedText);
+    },
+    (errorMsg) => {
+      // Per-frame error - normal when no barcode visible, ignore
     }
-
-    cameraStream = stream;
-    vid.srcObject = stream;
-    vid.style.display = 'block';
-    laser.style.display = 'block';
-    document.getElementById('vf-overlay').style.pointerEvents = 'none';
-    _scanActive = true;
-
-    await new Promise(res => { vid.onloadedmetadata = res; });
-    await vid.play();
+  )
+  .then(() => {
     hint.textContent = 'Point camera at barcode';
-
-    // Set up hidden canvas for frame grabs
-    _scanCanvas = document.createElement('canvas');
-    _scanCtx = _scanCanvas.getContext('2d', { willReadFrequently: true });
-
-    // Choose decode method: native BarcodeDetector → ZXing → warn
-    if (typeof BarcodeDetector !== 'undefined') {
-      _startNativeDetector(vid, hint);
-    } else if (typeof ZXing !== 'undefined') {
-      _startZXingLoop(vid, hint);
-    } else {
-      hint.textContent = 'Library loading… try manual entry';
-      // Poll until ZXing loads (CDN may be slow)
-      let attempts = 0;
-      const poll = setInterval(() => {
-        attempts++;
-        if (typeof ZXing !== 'undefined') {
-          clearInterval(poll);
-          _startZXingLoop(vid, hint);
-        } else if (attempts > 20) {
-          clearInterval(poll);
-          hint.textContent = 'Scanner unavailable — use manual entry below';
-        }
-      }, 500);
-    }
-
-  } catch(err) {
+    document.getElementById('scan-laser').style.display = 'block';
+    // Store stream ref so stopCamera can clean up
+    cameraStream = true;
+    // Hide html5-qrcode default UI clutter
+    const scanDashboard = document.getElementById('qr-reader__dashboard');
+    if (scanDashboard) scanDashboard.style.display = 'none';
+  })
+  .catch(err => {
     _scanActive = false;
-    vid.style.display = 'none';
-    laser.style.display = 'none';
+    cameraStream = null;
     btn.innerHTML = _CAM_BTN_OPEN;
     hint.textContent = 'Tap below to open camera';
-    if (/denied|permission/i.test(err.message||err.name||'')) {
+    if (/permission|denied/i.test(String(err))) {
       toast('Camera permission denied — check browser settings', 'error');
     } else {
       toast('Could not start camera — use manual entry', 'error');
     }
-  }
+    console.error('Camera error:', err);
+  });
 }
 
-function _startNativeDetector(vid, hint) {
-  // Chrome/Android native BarcodeDetector - fastest
-  const detector = new BarcodeDetector({ formats: ['code_128','code_39','code_93','ean_13','ean_8','upc_a','upc_e','qr_code','data_matrix','itf'] });
-  let detecting = false;
+let _lastScannedCode = '';
+let _lastScannedTime = 0;
 
-  function detect() {
-    if (!_scanActive) return;
-    _scanRAF = requestAnimationFrame(detect);
-    if (detecting || vid.readyState < 2) return;
-    detecting = true;
-    detector.detect(vid)
-      .then(barcodes => {
-        detecting = false;
-        if (barcodes.length > 0) {
-          _onBarcodeScan(barcodes[0].rawValue, hint);
-        }
-      })
-      .catch(() => { detecting = false; });
-  }
-  detect();
-}
-
-function _startZXingLoop(vid, hint) {
-  // ZXing canvas frame loop fallback
-  try {
-    _zxingReader = new ZXing.BrowserMultiFormatReader();
-  } catch(e) {
-    hint.textContent = 'Scanner error — use manual entry'; return;
-  }
-
-  let scanning = false;
-  function scanFrame() {
-    if (!_scanActive) return;
-    _scanRAF = requestAnimationFrame(scanFrame);
-    if (scanning || vid.readyState < 2 || vid.paused) return;
-    const now = Date.now();
-    if (now - _lastScan < 300) return; // throttle to ~3fps decode attempts
-    scanning = true;
-    _lastScan = now;
-
-    _scanCanvas.width = vid.videoWidth || 640;
-    _scanCanvas.height = vid.videoHeight || 480;
-    _scanCtx.drawImage(vid, 0, 0, _scanCanvas.width, _scanCanvas.height);
-
-    const imageData = _scanCtx.getImageData(0, 0, _scanCanvas.width, _scanCanvas.height);
-    try {
-      const result = _zxingReader.decodeFromImageData(imageData);
-      if (result) {
-        scanning = false;
-        _onBarcodeScan(result.getText(), hint);
-        return;
-      }
-    } catch(e) {
-      // NotFoundException is normal — no barcode in frame yet
-    }
-    scanning = false;
-  }
-  scanFrame();
-}
-
-function _onBarcodeScan(code, hint) {
-  // Debounce — don't fire twice for same scan
+function _onBarcodeScan(code) {
   const now = Date.now();
-  if (now - _lastScan < 1500 && code === (window._lastScannedCode||'')) return;
-  _lastScan = now;
-  window._lastScannedCode = code;
+  // Debounce: ignore same code within 2 seconds
+  if (code === _lastScannedCode && now - _lastScannedTime < 2000) return;
+  _lastScannedCode = code;
+  _lastScannedTime = now;
 
-  hint.textContent = '✓ ' + code;
+  const hint = document.getElementById('vf-hint');
+  if (hint) hint.textContent = '✓ Scanned: ' + code;
+
   const bcInput = document.getElementById('bc-input');
   if (bcInput) bcInput.value = code;
 
@@ -1249,23 +1189,23 @@ function _onBarcodeScan(code, hint) {
     stopCamera();
     toast('Scanned: ' + item.name, 'success');
   } else {
-    toast('Not found: ' + code, 'error');
+    toast('Barcode not in system: ' + code, 'error');
   }
 }
 
 function stopCamera() {
   _scanActive = false;
-  if (_scanRAF) { cancelAnimationFrame(_scanRAF); _scanRAF = null; }
-  if (_zxingReader) { try { _zxingReader.reset(); } catch(e) {} _zxingReader = null; }
-  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
-  const vid = document.getElementById('scan-video');
-  if (vid) { vid.srcObject = null; vid.style.display = 'none'; }
-  const laser = document.getElementById('scan-laser');
-  if (laser) laser.style.display = 'none';
+  cameraStream = null;
+  document.getElementById('scan-laser').style.display = 'none';
   const hint = document.getElementById('vf-hint');
   if (hint) hint.textContent = 'Tap below to open camera';
   const btn = document.getElementById('cam-btn');
   if (btn) btn.innerHTML = _CAM_BTN_OPEN;
+  if (_html5QrCode) {
+    _html5QrCode.stop()
+      .then(() => { _html5QrCode.clear(); _html5QrCode = null; })
+      .catch(() => { try { _html5QrCode.clear(); } catch(e) {} _html5QrCode = null; });
+  }
 }
 
 // ── LOGS ──
