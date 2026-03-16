@@ -369,6 +369,22 @@
   .del-sched-btn svg { width: 14px; height: 14px; }
   .del-sched-btn:active { opacity: 0.7; }
 
+
+  /* ── CART ── */
+  .cart-bar { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); margin: 0 0 16px; overflow: hidden; }
+  .cart-bar-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; cursor: pointer; }
+  .cart-bar-title { font-size: 13px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .cart-count { background: var(--accent); color: #fff; font-size: 11px; font-weight: 800; border-radius: 99px; padding: 2px 8px; }
+  .cart-items { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .cart-item { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
+  .cart-item-info { flex: 1; min-width: 0; }
+  .cart-item-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cart-item-bc { font-size: 11px; font-family: var(--mono); color: var(--text3); margin-top: 1px; }
+  .cart-item-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 99px; flex-shrink: 0; }
+  .cart-remove { background: none; border: none; color: var(--text3); cursor: pointer; padding: 4px; font-size: 18px; line-height: 1; flex-shrink: 0; }
+  .cart-remove:hover { color: var(--red); }
+  .cart-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 12px 12px; }
+  .cart-empty-hint { text-align: center; color: var(--text3); font-size: 12px; padding: 8px 12px 12px; }
   /* ── MY ITEMS CHIP ── */
   .my-items-strip { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 8px; }
   .my-item-chip { background: var(--amber-dim); border: 1px solid rgba(245,158,11,0.25); border-radius: var(--radius-sm); padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; }
@@ -532,8 +548,30 @@
         <div class="item-meta"><span class="badge badge-cat" id="ic-cat"></span></div>
         <div class="item-who" id="ic-who"></div>
         <button class="action-btn" id="ic-action-btn" onclick="doAction()"></button>
-        <button onclick="schedFromScan()" style="width:100%;margin-top:10px;padding:14px;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:var(--radius-sm);font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;">&#128197; Schedule This Item</button>
+        <button onclick="addToCart()" id="ic-cart-btn" style="width:100%;margin-top:10px;padding:14px;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:var(--radius-sm);font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;">+ Add to Cart</button>
+        <button onclick="schedFromScan()" style="width:100%;margin-top:8px;padding:14px;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:var(--radius-sm);font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;">&#128197; Schedule This Item</button>
+      </div>
 
+      <!-- CART -->
+      <div class="cart-bar" id="cart-bar" style="display:none;margin-top:16px;">
+        <div class="cart-bar-header" onclick="toggleCartExpand()">
+          <div class="cart-bar-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:16px;height:16px;"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            Cart
+            <span class="cart-count" id="cart-count">0</span>
+          </div>
+          <svg id="cart-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:16px;height:16px;transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div id="cart-body">
+          <div class="cart-items" id="cart-items-list"></div>
+          <div class="cart-actions">
+            <button class="btn btn-ghost" style="margin-top:0;font-size:13px;padding:12px;" onclick="clearCart()">Clear Cart</button>
+            <button class="btn" style="margin-top:0;font-size:13px;padding:12px;" id="cart-checkout-btn" onclick="cartCheckoutAll()">Check Out All</button>
+          </div>
+          <div style="padding:0 12px 12px;">
+            <button style="width:100%;padding:12px;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;" onclick="cartScheduleAll()">&#128197; Schedule All Items</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -975,7 +1013,7 @@ function navTo(name) {
   if (name === 'home') refreshHome();
   if (name === 'logs') renderLogs();
   if (name === 'admin') { renderAdminUsers(); renderAdminEquip(); renderAdminAllLogs(); showAuditIdle(); }
-  if (name === 'scanner') { currentItem = null; document.getElementById('item-card').classList.remove('visible'); document.getElementById('bc-input').value = ''; }
+  if (name === 'scanner') { currentItem = null; document.getElementById('item-card').classList.remove('visible'); document.getElementById('bc-input').value = ''; renderCart(); }
   if (name === 'schedule') {
     const isAdmin = !!(currentUser && currentUser.role === 'admin');
     document.getElementById('sched-plus-btn').style.display = isAdmin ? '' : 'none';
@@ -1009,6 +1047,126 @@ function refreshHome() {
 }
 
 // ── SCANNER ──
+// ── CART ──
+let cart = []; // array of equipment ids
+let cartExpanded = true;
+
+function addToCart() {
+  if (!currentItem) return;
+  const item = db.equipment.find(e => e.id === currentItem.id);
+  if (!item) return;
+  if (cart.find(c => c.id === item.id)) { toast('Already in cart', ''); return; }
+  cart.push({ id: item.id, name: item.name, barcode: item.barcode, checkedOutBy: item.checkedOutBy });
+  document.getElementById('bc-input').value = '';
+  document.getElementById('item-card').classList.remove('visible');
+  currentItem = null;
+  renderCart();
+  toast(item.name + ' added to cart', 'success');
+}
+
+function removeFromCart(id) {
+  cart = cart.filter(c => c.id !== id);
+  renderCart();
+}
+
+function clearCart() {
+  cart = [];
+  renderCart();
+}
+
+function toggleCartExpand() {
+  cartExpanded = !cartExpanded;
+  document.getElementById('cart-body').style.display = cartExpanded ? '' : 'none';
+  document.getElementById('cart-chevron').style.transform = cartExpanded ? '' : 'rotate(-90deg)';
+}
+
+function renderCart() {
+  const bar = document.getElementById('cart-bar');
+  const list = document.getElementById('cart-items-list');
+  const count = document.getElementById('cart-count');
+  const checkoutBtn = document.getElementById('cart-checkout-btn');
+
+  if (cart.length === 0) { bar.style.display = 'none'; return; }
+  bar.style.display = '';
+  count.textContent = cart.length;
+
+  // Figure out if cart is mixed checkout/return
+  const toCheckout = cart.filter(c => !c.checkedOutBy);
+  const toReturn   = cart.filter(c => c.checkedOutBy === currentUser.id || (currentUser.role === 'admin' && c.checkedOutBy));
+  if (toCheckout.length > 0 && toReturn.length === 0) {
+    checkoutBtn.textContent = 'Check Out All (' + toCheckout.length + ')';
+    checkoutBtn.style.background = 'var(--accent)';
+  } else if (toReturn.length > 0 && toCheckout.length === 0) {
+    checkoutBtn.textContent = 'Return All (' + toReturn.length + ')';
+    checkoutBtn.style.background = 'var(--green)';
+    checkoutBtn.style.color = '#fff';
+  } else {
+    checkoutBtn.textContent = 'Process All (' + cart.length + ')';
+    checkoutBtn.style.background = 'var(--accent)';
+  }
+
+  list.innerHTML = cart.map(c => {
+    const isOut = !!c.checkedOutBy;
+    return `<div class="cart-item">
+      <div class="cart-item-info">
+        <div class="cart-item-name">${c.name}</div>
+        <div class="cart-item-bc">${c.barcode}</div>
+      </div>
+      <span class="cart-item-badge ${isOut ? 'badge-out' : 'badge-available'}" style="background:${isOut ? 'var(--amber-dim)' : 'var(--green-dim)'};color:${isOut ? 'var(--amber)' : 'var(--green)'};">${isOut ? 'Out' : 'In'}</span>
+      <button class="cart-remove" onclick="removeFromCart('${c.id}')" title="Remove">×</button>
+    </div>`;
+  }).join('');
+}
+
+async function cartCheckoutAll() {
+  if (cart.length === 0) return;
+  const now = new Date().toISOString();
+  let processed = 0;
+
+  for (const cartItem of cart) {
+    const item = db.equipment.find(e => e.id === cartItem.id);
+    if (!item) continue;
+    const logId = nextId();
+
+    if (item.checkedOutBy) {
+      // Return
+      if (item.checkedOutBy !== currentUser.id && currentUser.role !== 'admin') continue;
+      const logEntry = { itemId: item.id, itemName: item.name, barcode: item.barcode, category: item.category, userId: currentUser.id, userName: currentUser.name, action: 'return', time: now };
+      item.checkedOutBy = null; item.checkedOutAt = null;
+      await fsWrite(() => Promise.all([
+        COL.equipment.doc(item.id).update({ checkedOutBy: null, checkedOutAt: null }),
+        COL.logs.doc(logId).set(logEntry)
+      ]));
+      db.logs.unshift({ id: logId, ...logEntry });
+    } else {
+      // Checkout
+      const logEntry = { itemId: item.id, itemName: item.name, barcode: item.barcode, category: item.category, userId: currentUser.id, userName: currentUser.name, action: 'checkout', time: now };
+      item.checkedOutBy = currentUser.id; item.checkedOutAt = now;
+      await fsWrite(() => Promise.all([
+        COL.equipment.doc(item.id).update({ checkedOutBy: currentUser.id, checkedOutAt: now }),
+        COL.logs.doc(logId).set(logEntry)
+      ]));
+      db.logs.unshift({ id: logId, ...logEntry });
+    }
+    processed++;
+  }
+
+  const hadCheckouts = cart.some(c => !c.checkedOutBy);
+  cart = [];
+  renderCart();
+  refreshHome();
+  toast(processed + ' item' + (processed !== 1 ? 's' : '') + (hadCheckouts ? ' checked out ✓' : ' returned ✓'), 'success');
+}
+
+function cartScheduleAll() {
+  if (cart.length === 0) return;
+  // Pass cart item ids to schedule screen
+  _pendingCartItems = cart.map(c => c.id);
+  navTo('schedule');
+}
+
+let _pendingCartItems = [];
+
 function onBarcodeInput(val) {
   if (val.length >= 2) {
     const item = db.equipment.find(e => e.barcode.toLowerCase().startsWith(val.toLowerCase()));
@@ -1171,7 +1329,6 @@ let _lastScannedTime = 0;
 
 function _onBarcodeScan(code) {
   const now = Date.now();
-  // Debounce: ignore same code within 2 seconds
   if (code === _lastScannedCode && now - _lastScannedTime < 2000) return;
   _lastScannedCode = code;
   _lastScannedTime = now;
@@ -1186,10 +1343,25 @@ function _onBarcodeScan(code) {
   if (item) {
     currentItem = item;
     renderItemCard(item);
-    stopCamera();
-    toast('Scanned: ' + item.name, 'success');
+    // Auto-add to cart and keep camera open for next scan
+    if (!cart.find(c => c.id === item.id)) {
+      cart.push({ id: item.id, name: item.name, barcode: item.barcode, checkedOutBy: item.checkedOutBy });
+      renderCart();
+      toast('✓ ' + item.name + ' added to cart', 'success');
+    } else {
+      toast(item.name + ' already in cart', '');
+    }
+    // Reset for next scan
+    setTimeout(() => {
+      _lastScannedCode = '';
+      if (hint) hint.textContent = 'Point camera at barcode';
+      if (bcInput) bcInput.value = '';
+      document.getElementById('item-card').classList.remove('visible');
+      currentItem = null;
+    }, 1200);
   } else {
-    toast('Barcode not in system: ' + code, 'error');
+    toast('Not in system: ' + code, 'error');
+    setTimeout(() => { _lastScannedCode = ''; }, 2000);
   }
 }
 
@@ -1634,9 +1806,12 @@ function drawStudentSched(preItemId){
   const el=document.getElementById('sched-content');
   if(!el)return;
   const today=new Date().toISOString().split('T')[0];
+  // Use cart items if available, otherwise single item
+  const cartIds = (_pendingCartItems && _pendingCartItems.length > 0) ? _pendingCartItems : (preItemId ? [preItemId] : []);
+  _pendingCartItems = [];
   const opts=db.equipment
     .filter(e=>!e.status||e.status==='In Stock'||e.status==='Signed Out')
-    .map(e=>'<option value="'+e.id+'"'+(preItemId===e.id?' selected':'')+'>'+e.name+' ('+e.barcode+')</option>')
+    .map(e=>'<option value="'+e.id+'"'+(cartIds.includes(e.id)?' selected':'')+'>'+e.name+' ('+e.barcode+')</option>')
     .join('');
   const mine=(db.reservations||[]).filter(r=>r.userId===currentUser.id).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
   const mineHtml=mine.length===0
